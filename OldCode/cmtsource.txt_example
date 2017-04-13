@@ -1,0 +1,20 @@
+
+
+{'year' : 2016,
+'month' : 5,
+'day' : 28,
+'hour' : 5,
+'min' : 38,
+'sec' : 50,
+'msec' :50,
+'latitude' : -21.9700,
+'longitude' : -178.2000,
+'depth' : 405.7,
+'half_duration' : 7.0,
+'centroid_time_minus_hypocenter_time' : 6.89,
+'Mrr' : -1.91e26,
+'Mtt' : 5.38e25,
+'Mpp' : 1.37e26,
+'Mrt' : -1.64e26,
+'Mrp' : -1.77e26,
+'Mtp' : 4.68e25}

@@ -1,0 +1,20 @@
+
+
+{'year' : 2017,
+'month' : 2,
+'day' : 24,
+'hour' : 17,
+'min' : 28,
+'sec' :55,
+'msec' :900,
+'latitude' : -23.48,
+'longitude' : -178.71,
+'depth' : 419.3,
+'half_duration' : 7.2,
+'centroid_time_minus_hypocenter_time' : 11.0,
+'Mrr' : -0.993e26,
+'Mtt' : 0.089e26,
+'Mpp' : 0.904e26,
+'Mrt' : -0.979e26,
+'Mrp' : -2.960e26,
+'Mtp' : -0.420e26}
