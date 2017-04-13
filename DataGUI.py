@@ -28,6 +28,7 @@ from add_travel_times import *
 from add_event_cmt import *
 from plot_data_with_azimuth import *
 from plot_data_with_distance import *
+from add_turn_points import *
 
 #####################################################################################
     
@@ -187,6 +188,50 @@ ttk.Button(travelframe, text="Add Travel Times", command=addTravelTimes).pack(an
 
 #####################################################################################
 
+#####################################################################################
+### Section for adding turning points
+#####################################################################################
+
+# Create frame
+turnframe = ttk.Frame(mainframe, padding="12 12 12 12", relief=RAISED)
+turnframe.grid(column=5, row=12, rowspan=5, sticky=(N, W, E, S))
+turnframe.columnconfigure(0, weight=1)
+turnframe.rowconfigure(0, weight=1)
+
+def read2(phase):
+    return vPhases2[phase].get()
+
+def addTurningPoints():
+    # Get event name
+    n = str(name.get())
+
+    # Check for any phases to include
+    phasesToInclude2 = []
+    for i in range(len(vPhases2)):
+        if read2(i):
+            phasesToInclude2.append(phases2[i])
+        else:
+            continue
+
+    turningPoints(n, phasesToInclude2)
+    
+# Create label, checkbuttons and execute button
+ttk.Label(turnframe, text="Turning points").pack(anchor=W)
+ttk.Label(turnframe, text="Select phases").pack(anchor=W)
+
+# Loop through phase options and create check buttons for each. Just add more names
+# to the phases list to produce more buttons. May need to add a counter and if
+# statement in order to split into two columns beyond a certain number of phases
+phases2 = ["S", "ScS", "Sdiff"]
+vPhases2 = [None] * len(phases2)
+
+for i in range(len(phases2)):
+    vPhases2[i] = BooleanVar()
+    Checkbutton(turnframe, text=phases2[i], variable=vPhases2[i]).pack(anchor=W)
+
+ttk.Button(turnframe, text="Add Turning Points", command=addTurningPoints).pack(anchor=W)
+
+#####################################################################################
 
 #####################################################################################
 ### Section to add the CMT to the data
@@ -194,7 +239,7 @@ ttk.Button(travelframe, text="Add Travel Times", command=addTravelTimes).pack(an
 
 # Create frame
 cmtframe = ttk.Frame(mainframe, padding="12 12 12 12")
-cmtframe.grid(column=4, row=1, rowspan=11)
+cmtframe.grid(column=4, row=1, rowspan=11, columnspan=3)
 cmtframe.columnconfigure(0, weight=1)
 cmtframe.rowconfigure(0, weight=1)
 
@@ -234,7 +279,7 @@ ttk.Button(cmtsaveframe, text="Add", command=addCMT).pack(anchor=E)
 #####################################################################################
 
 #####################################################################################
-### Section to add the CMT to the data
+### Plotter section
 #####################################################################################
 
 ### Want to extend this section to give better choices: amplitude, distance divisions
