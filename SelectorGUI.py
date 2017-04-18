@@ -3,7 +3,14 @@
 import obspy
 from obspy import read, UTCDateTime
 from obspy.core import Stream
-import os, os.path, time, glob, shutil, sys, subprocess, matplotlib
+import os
+import os.path
+import time
+import glob
+import shutil
+import sys
+import subprocess
+import matplotlib
 matplotlib.use('TkAgg')
 import numpy as np
 import matplotlib.pyplot as plt
@@ -44,7 +51,9 @@ class Application(tk.Frame):
         self.event = StringVar()
         self.eventName = StringVar()
         ttk.Label(master=root, text="Name").grid(row=1, column=0)
-        ttk.Entry(master=root, textvariable=self.name).grid(row=1, column=1, columnspan=2)
+        nameEntry = ttk.Entry(master=root, textvariable=self.name)
+        nameEntry.grid(row=1, column=1, columnspan=2)
+        nameEntry.focus_set()
 
         self.createWidgets()
 
@@ -69,17 +78,20 @@ class Application(tk.Frame):
     def resetCounter(self):
         print(self.s)
         self.s = 0
+        self.clickCounter = 0
         self.counterUpdate()
 
     def rejectData(self, canvas, ax, canvas2, ax2, event=None):
         shutil.move(self.seislist[self.s], self.dirdump)
         self.s += 1
+        self.clickCounter = 0
         self.counterUpdate
         self.plot(canvas, ax, canvas2, ax2)
 
     def acceptData(self, canvas, ax, canvas2, ax2, event=None):
         self.s += 1
-        self.counterUpdate()
+        self.clickCounter = 0
+        self.counterUpdate
         print('Data accepted')
         self.plot(canvas, ax, canvas2, ax2)
 
@@ -158,8 +170,6 @@ class Application(tk.Frame):
         self.seisStats = seis[0].stats
 
         # Plotting data. Both components normalised by max amplitude on transverse component
-        #plt.subplot(2,1,2)
-        #plt.plot(seisR.times() + tshift, seisR.data / np.max(seisT.data), 'k', linewidth=3)
         ax.plot(self.seisT.times() + tshift, self.seisT.data / np.max(self.seisT.data), 'k', linewidth=2)
         ax2.plot(self.seisR.times() + tshift, self.seisR.data / np.max(self.seisT.data), 'k', linewidth=2)
 
@@ -191,13 +201,12 @@ class Application(tk.Frame):
         ax.set_xlim([seis[0].stats.traveltimes[phase] - 50, seis[0].stats.traveltimes[phase] + 100])
 
         ax2.set_ylim([-1.0, 1.0])
-        ax2.set_xlim([seis[0].stats.traveltimes[phase] - 500, seis[0].stats.traveltimes[phase] + 100])
-
+        ax2.set_xlim([seis[0].stats.traveltimes[phase] - 50, seis[0].stats.traveltimes[phase] + 100])
+        
         canvas.draw()
         canvas2.draw()
 
-        self.replot = False
-
+        self.replot = False           
     
 root = tk.Tk()
 root.title("Part III Project - Data Selector")

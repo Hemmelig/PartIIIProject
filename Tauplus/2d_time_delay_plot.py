@@ -14,7 +14,7 @@ import phases
 plotphase = ["S", "ScS"]
 
 # Depth of earthquake in km
-depth_earthquake = 418.89
+depth_earthquake = 414.89
 
 # Defines array of distances to compute ray path at
 # format: np.arange(start, stop, stepsize)
@@ -26,10 +26,10 @@ distance = 90.
 
 # Anomalous layer
 #top_r_arr = np.arange(2886.0, 2850.0, -1)
-top_r_arr = np.arange(2882.0, 2880.0, -1)
+top_r_arr = np.arange(2878.0, 2882.0, 1)
 bot_r = 2891.0
 #dv_s_arr = np.arange(-0.1, -0.26, -0.01)
-dv_s_arr = np.arange(-0.2, -0.22, -0.01)
+dv_s_arr = np.arange(-0.24, -0.2, 0.01)
 dv_p = -0.1
 drho = 0.1
 
@@ -145,15 +145,19 @@ fig = plt.figure(figsize=(6,4))
 
 ax = fig.add_subplot(111)
 ax.set_title('colorMap')
-scaler = dt_arr.max()
+#scaler = dt_arr.max()
 
-def f(x):
-    return x / scaler
-f = np.vectorize(f)
+#def f(x):
+#    return x / scaler
+#f = np.vectorize(f)
 
-dt_arr = f(dt_arr)
-plt.scatter(top_r_arr, dv_s_arr, c=dt_arr, s=500, cmap=cm)
-ax.set_aspect('equal')
+#dt_arr = f(dt_arr)
+
+y, x = np.meshgrid(top_r_arr, dv_s_arr)
+
+print(dt_arr, top_r_arr, dv_s_arr)
+plt.pcolormesh(x, y, dt_arr, cmap=cm)
+#ax.set_aspect('equal')
 
 plt.colorbar(orientation='vertical')
 plt.show()
