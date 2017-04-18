@@ -169,6 +169,11 @@ class Application(tk.Frame):
         self.seisZ = seis.select(channel='BHZ')
         self.seisStats = seis[0].stats
 
+        # Differentiate data
+        self.seisT.data = np.gradient(self.seisT.data, self.seisT.stats.delta)
+        self.seisR.data = np.gradient(self.seisR.data, self.seisT.stats.delta)
+        
+
         # Plotting data. Both components normalised by max amplitude on transverse component
         ax.plot(self.seisT.times() + tshift, self.seisT.data / np.max(self.seisT.data), 'k', linewidth=2)
         ax2.plot(self.seisR.times() + tshift, self.seisR.data / np.max(self.seisT.data), 'k', linewidth=2)
@@ -187,6 +192,9 @@ class Application(tk.Frame):
                 self.synR.filter('highpass', freq=self.fmin, corners=2, zerophase=True)
                 self.synR.filter('lowpass', freq=self.fmax, corners=2, zerophase=True)
 
+            self.synR.data = np.gradient(self.synR.data, self.synR.stats.delta)
+            self.synT.data = np.gradient(self.synT.data, self.synT.stats.delta)
+                
             ax2.plot(self.synR.times(), self.synR.data / np.max(self.seisT.data), color=[0.5,0.5,0.5])
             ax.plot(self.synT.times(), self.synT.data / np.max(self.seisT.data), color=[0.5,0.5,0.5])
 

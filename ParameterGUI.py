@@ -49,6 +49,8 @@ class Application(tk.Frame):
         self.name = StringVar()
         self.event = StringVar()
         self.eventName = StringVar()
+        self.azimuth = StringVar()
+        self.distance = StringVar()
         ttk.Label(master=root, text="Name").grid(row=1, column=0)
         ttk.Entry(master=root, textvariable=self.name).grid(row=1, column=1, columnspan=2)
 
@@ -68,9 +70,15 @@ class Application(tk.Frame):
 
         self.plot(canvas, ax)
 
+        self.distAzUpdate()
+
     def counterUpdate(self):
         self.eventName.set(str(self.seislist[self.s]))
         self.event.set(str(self.s) + ' / ' + str(len(self.seislist)))
+
+    def distAzUpdate(self):
+        self.azimuth.set('Azimuth : ' + str(self.az))
+        self.distance.set('Distance : ' + str(self.dist))
         
     def resetCounter(self):
         print(self.s)
@@ -81,18 +89,22 @@ class Application(tk.Frame):
     def acceptData(self, canvas, ax, event=None):
         self.s += 1
         self.clickCounter = 0
-        self.counterUpdate
-        print('Data accepted')
+        self.counterUpdate()
         self.plot(canvas, ax)
+        self.distAzUpdate()
 
     def createWidgets(self):
-        ttk.Button(master=root, text="Start", command=lambda: self.initiate(canvas,ax)).grid(row=1, column=3, columnspan=2)        
+        ttk.Button(master=root, text="Start", command=lambda: self.initiate(canvas,ax), underline=0).grid(row=1, column=3, columnspan=2)        
         ttk.Button(master=root, text="Accept", command=lambda: self.acceptData(canvas,ax)).grid(row=1, column=5, columnspan=2)
         ttk.Button(master=root, text="Reset", command=lambda: self.resetCounter()).grid(row=1, column=7)
 
         # Create labels so can track which event is being viewed
-        ttk.Label(master=root, textvariable=self.event).grid(row=3, column=5)
-        ttk.Label(master=root, textvariable=self.eventName).grid(row=3, column=3, columnspan=2)
+        ttk.Label(master=root, textvariable=self.event).grid(row=4, column=5)
+        ttk.Label(master=root, textvariable=self.eventName).grid(row=4, column=3, columnspan=2)
+
+        # Create labels for distance and azimuth
+        ttk.Label(master=root, textvariable=self.azimuth).grid(row=3, column=2, columnspan=2)
+        ttk.Label(master=root, textvariable=self.distance).grid(row=3, column=4, columnspan=2)
 
         # Create canvas
         fig = plt.figure(figsize=(16,8), dpi=100)
@@ -110,7 +122,6 @@ class Application(tk.Frame):
         ax.clear()
 
         # Get current data
-        print(self.s, len(self.seislist))
         seis = read(self.seislist[int(self.s)], format='PICKLE')
 
         seis.filter('highpass', freq=self.fmin, corners=2, zerophase=True)
@@ -122,10 +133,12 @@ class Application(tk.Frame):
 
         self.tshift = seis[2].stats['starttime'] - seis[2].stats['eventtime']
 
-        self.seisR = seis.select(channel='BHR')[0]
         self.seisT = seis.select(channel='BHT')[0]
-        self.seisZ = seis.select(channel='BHZ')
-        self.seisStats = seis[0].stats
+
+        self.az = seis[0].stats['az']
+        self.dist = seis[0].stats['dist']
+
+        self.seisT.data = np.gradient(self.seisT.data, self.seisT.stats.delta)
 
         # Plotting data. Both components normalised by max amplitude on transverse component
         ax.plot(self.seisT.times() + self.tshift, self.seisT.data / np.max(self.seisT.data), 'k', linewidth=2)
@@ -136,7 +149,6 @@ class Application(tk.Frame):
                 ax.plot(seis[0].stats.traveltimes[k], 0.0, 'g', marker='o', markersize=4)
                 ax.text(seis[0].stats.traveltimes[k], -0.2, k, fontsize=8)
 
-        #ax.title(str(self.seis[0].stats['dist']) + '   ' + str(self.seis[0].stats['az']))
         ax.set_ylim([-1.0, 1.0])
         ax.set_xlim([seis[0].stats.traveltimes[phase] - 50, seis[0].stats.traveltimes[phase] + 100])
 
@@ -145,9 +157,8 @@ class Application(tk.Frame):
         canvas.draw()
         
     def __onclick__(self, click):
-        print(self.clickCounter)
+        print('Click!')
         self.clickCounter += 1
-        print(self.clickCounter)
         self.point = (click.xdata, click.ydata)
         xArr = self.seisT.times() + self.tshift
         if (self.clickCounter == 1):
@@ -165,7 +176,7 @@ class Application(tk.Frame):
         print(xArr[idx2], xArr[idx1])
         delayTime = xArr[idx2] - xArr[idx1]
         amplRatio = self.seisT.data[idx1] / self.seisT.data[idx2]
-        print(delayTime, amplRatio)          
+        print(delayTime, amplRatio)      
     
 root = tk.Tk()
 root.title("Part III Project - Parameter Calculator")
