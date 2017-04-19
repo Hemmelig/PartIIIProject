@@ -52,7 +52,7 @@ f.close()
 print(delayTimes, amplRatios, azis, dists)
 
 # Start map
-m = Basemap(projection='ortho',lat_0=midlat,lon_0=midlon,resolution='i')
+m = Basemap(projection='ortho', lat_0=midlat, lon_0=midlon, resolution='i')
 clip_path = m.drawmapboundary()
 
 # Plot background from the cluster analysis of Cottaar &Lekic 2016
@@ -75,8 +75,10 @@ for s in range(len(seislist)):
     print(s, seislist[s])
     seis = read(seislist[s], format='PICKLE')
 
+    # Get event-station pair delay time and amplitude ratio
     delayTime = delayTimes[s]
     amplRatio = amplRatios[s]
+    print(delayTime)
 
     elat = seis[0].stats['evla']
     elon = seis[0].stats['evlo']
@@ -90,20 +92,25 @@ for s in range(len(seislist)):
 
     # Plot station location
     slat = seis[0].stats['stla']
-    slon = seis[0].stats['slon']
-    slon = [slon + 360. if slon < 0 else slon]
+    slon = seis[0].stats['stlo']
     x2, y2 = m(slon, slat)
     m.scatter(x2, y2, s=35, c='w', marker='^', alpha=1)
 
-    # Plot great circle, coloured by delay time
-    x, y = m.gcpoints(elon, elat, slon, slat, 300)
-    m.plot(x, y, c=delayTime)
+    # Get bounce location of ScS phase
+    turnloc = seis[0].stats.turnpoints["ScS"]
+    tlon = turnloc[2]
+    x2, y2 = m(tlon, turnloc[1])
+    print(x2, y2)
+    if (delayTime == 0):
+        m.scatter(x2, y2, s=35, marker='x', alpha=1)
+    else:
+        m.scatter(x2, y2, s=35, c=delayTime, marker='o', alpha=1)
 
-plt.colorbar(location='right')
+plt.colorbar()
 
 # Location of ULVZ
 x0, y0 = -167.5, 17.5
-R = 5
+R = 7.5
 
 m.tissot(x0, y0, R, 100, facecolor='g', alpha=0.5)
 
