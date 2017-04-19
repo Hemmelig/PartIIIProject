@@ -37,7 +37,10 @@ class Application(tk.Frame):
     clickCounter = 0
 
     # Initialise storage for clicks
-    clickStorage = []
+    delayTimes = []
+    amplRatios = []
+    azis = []
+    dists = []
 
     # Filter frequencies
     fmin = 0.033
@@ -57,16 +60,11 @@ class Application(tk.Frame):
         self.createWidgets()
 
     def initiate(self, canvas, ax):
-        dir = 'Data/' + str(self.name.get()) + '/'
-        self.seislist = glob.glob(dir + '/*PICKLE')
+        self.dir = 'Data/' + str(self.name.get()) + '/'
+        self.seislist = glob.glob(self.dir + '/*PICKLE')
         print(self.seislist)
 
         self.resetCounter()
-        
-        # Create directory to dump data into
-        self.dirdump = dir + 'Dump'
-        if not os.path.exists(self.dirdump):
-            os.makedirs(self.dirdump)
 
         self.plot(canvas, ax)
 
@@ -88,10 +86,25 @@ class Application(tk.Frame):
 
     def acceptData(self, canvas, ax, event=None):
         self.s += 1
-        self.clickCounter = 0
-        self.counterUpdate()
-        self.plot(canvas, ax)
-        self.distAzUpdate()
+        if (self.s == len(self.seislist)):
+            print('Last seismogram')
+            self.writeFile()
+        else:
+            if (self.clickCounter == 0):
+                self.delayTimes.append(0)
+                self.amplRatios.append(0)
+            self.writeFile()
+            self.clickCounter = 0
+            self.counterUpdate()
+            self.plot(canvas, ax)
+            self.distAzUpdate()
+
+    def writeFile(self):
+        print(self.delayTimes, self.amplRatios)
+        peakData = open(self.dir + 'peakData.txt', 'w')
+        for i in range(len(self.delayTimes)):
+            peakData.write("%s %s %s %s \n" % (self.delayTimes[i], self.amplRatios[i], self.azis[i], self.dists[i]))
+        peakData.close()
 
     def createWidgets(self):
         ttk.Button(master=root, text="Start", command=lambda: self.initiate(canvas,ax), underline=0).grid(row=1, column=3, columnspan=2)        
@@ -138,6 +151,9 @@ class Application(tk.Frame):
         self.az = seis[0].stats['az']
         self.dist = seis[0].stats['dist']
 
+        self.azis.append(self.az)
+        self.dists.append(self.dist)
+
         self.seisT.data = np.gradient(self.seisT.data, self.seisT.stats.delta)
 
         # Plotting data. Both components normalised by max amplitude on transverse component
@@ -176,8 +192,10 @@ class Application(tk.Frame):
         print(xArr[idx2], xArr[idx1])
         delayTime = xArr[idx2] - xArr[idx1]
         amplRatio = self.seisT.data[idx1] / self.seisT.data[idx2]
-        print(delayTime, amplRatio)      
-    
+        print(delayTime, amplRatio)
+        self.delayTimes.append(delayTime)
+        self.amplRatios.append(amplRatio)
+        
 root = tk.Tk()
 root.title("Part III Project - Parameter Calculator")
 app = Application(master=root)
