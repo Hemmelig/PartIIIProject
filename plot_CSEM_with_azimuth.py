@@ -37,7 +37,7 @@ for s in range(len(seislist)):
     seistoplot = []
 
     # Time shift to shift data to reference time
-    tshift = seis[0].stats['starttime'] -seis[0].stats['eventtime']
+    tshift = seis[0].stats['starttime'] - seis[0].stats['eventtime']
     
     Phase = ['Sdiff', 'S']
     for x in range(0, 2):
@@ -77,13 +77,6 @@ for s in range(len(seislist)):
     analytical_signal = hilbert(windowSeis)
     amplitude_envelope = np.abs(analytical_signal)
     plt.plot(windowTime, amplitude_envelope + np.round(seis[0].stats['az']))
-
-    # Finding peak maxima
-    #peakind = scipy.signal.find_peaks_cwt(windowSeis, np.arange(1,100))
-    #print(peakind, windowSeis[peakind[0]], windowTime[peakind[0]])
-
-    #for x in range(len(peakind)):
-    #    plt.plot(windowTime[peakind[x]], windowSeis[peakind[x]] + np.round(seis[0].stats['az']), 'x')
     
 # Put labels on graphs
 initDist = 85
@@ -97,6 +90,6 @@ for i in range(4):
     plt.tick_params(axis='both', which='major', labelsize=6)
 
 # Save file and show plot
-plt.savefig('Plots/' + event + '/' + event + '_synth_with_azimuth.pdf')
+plt.savefig('Plots/' + event + '/' + 'csem_with_azimuth.pdf')
 
 plt.show()

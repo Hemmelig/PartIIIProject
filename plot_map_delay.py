@@ -101,7 +101,7 @@ for s in range(len(seislist)):
     tlon = turnloc[2]
     x2, y2 = m(tlon, turnloc[1])
     print(x2, y2)
-    if (delayTime == 0):
+    if (int(delayTime) == 0):
         m.scatter(x2, y2, s=35, marker='x', alpha=1)
     else:
         m.scatter(x2, y2, s=35, c=delayTime, marker='o', alpha=1)
