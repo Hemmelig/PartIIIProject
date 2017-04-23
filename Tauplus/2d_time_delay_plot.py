@@ -9,6 +9,7 @@ from obspy.taup.tau import Arrivals
 import obspy.taup
 from collections import OrderedDict
 import phases
+import csv
 
 # Phases to plot, e.g. plotphase = ["S", "ScS"]
 plotphase = ["S", "ScS"]
@@ -26,10 +27,10 @@ distance = 90.
 
 # Anomalous layer
 #top_r_arr = np.arange(2886.0, 2850.0, -1)
-top_r_arr = np.arange(2878.0, 2882.0, 1)
+top_r_arr = np.arange(2856.0, 2886.0, 0.5)
 bot_r = 2891.0
 #dv_s_arr = np.arange(-0.1, -0.26, -0.01)
-dv_s_arr = np.arange(-0.24, -0.2, 0.01)
+dv_s_arr = np.arange(-0.24, -0.16, 0.01)
 dv_p = -0.1
 drho = 0.1
 
@@ -48,12 +49,11 @@ for i in range(len(top_r_arr)):
         print(dv_s_arr[j])
         dv_s = dv_s_arr[j]
 
-        
         # Velocity model as a function of depth
-        model = obspy.taup.taup_create.TauPCreate(input_filename='prem.nd', output_filename='prem.npz')
+        model = obspy.taup.taup_create.TauPCreate(input_filename='prem.nd', output_filename='./prem/prem.npz')
         model.load_velocity_model()
         model.run()
-        model.output_filename = 'prem_mod_' + str(i) + '_' + str(j) + '.npz'
+        model.output_filename = './prem/prem_mod_' + str(i) + '_' + str(j) + '.npz'
 
         depth = []
         vs = []
@@ -119,7 +119,7 @@ for i in range(len(top_r_arr)):
 
         # Plot for modified PREM
         
-        model = TauPyModel(model='./prem_mod_' + str(i) + '_' + str(j) + '.npz')
+        model = TauPyModel(model='./prem/prem_mod_' + str(i) + '_' + str(j) + '.npz')
                 
         print('Computing travel time of S')
         arrivals_S = model.get_travel_times(depth_earthquake, distance, phase_list=[plotphase[0]])
@@ -142,27 +142,27 @@ for i in range(len(top_r_arr)):
         del arrivals_ScS
 
 fig = plt.figure(figsize=(6,4))
-
 ax = fig.add_subplot(111)
 ax.set_title('colorMap')
-#scaler = dt_arr.max()
+cax = ax.matshow(dt_arr)
+fig.colorbar(cax)
 
-#def f(x):
-#    return x / scaler
-#f = np.vectorize(f)
+# Convert array values into strings
+top_r_arr = [str(x) for x in top_r_arr]
+dv_s_arr = [str(x) for x in dv_s_arr]
 
-#dt_arr = f(dt_arr)
+ax.set_xticklabels([''] + dv_s_arr)
+ax.set_yticklabels([''] + top_r_arr)
 
-y, x = np.meshgrid(top_r_arr, dv_s_arr)
-
-print(dt_arr, top_r_arr, dv_s_arr)
-plt.pcolormesh(x, y, dt_arr, cmap=cm)
-#ax.set_aspect('equal')
-
-plt.colorbar(orientation='vertical')
 plt.show()
+
+print(dt_arr)
+
+dir = '../Data/PeakData/'
+
+with open(dir + '20170224_2d_dt.csv', 'w') as csvfile:
+    writer = csv.writer(csvfile)
+    [writer.writerow(r) for r in dt_arr]
         
 #plt.savefig('example.png')
 #plt.savefig('example.pdf')
-
-#plt.show()

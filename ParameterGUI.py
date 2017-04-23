@@ -19,6 +19,7 @@ from matplotlib.figure import Figure
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import *
+from tkinter.scrolledtext import ScrolledText
 
 
 '''
@@ -35,12 +36,11 @@ class Application(tk.Frame):
     # Initialise counters
     s = 0
     clickCounter = 0
-    interest = False
 
     # Initialise storage for clicks
     delayTimes = []
     amplRatios = []
-    interests = []
+    comments = []
     azis = []
     dists = []
 
@@ -62,8 +62,76 @@ class Application(tk.Frame):
         self.freqMax = DoubleVar()
         self.dataOrSyn = IntVar()
         self.dataOrSyn.set(1)
+        self.comment = StringVar()
 
         self.createWidgets()
+
+    def createWidgets(self):
+        # Create options section
+        optionFrame = ttk.Frame(root, padding="12 12 12 12", relief=RAISED)
+        optionFrame.grid(column=0, row=2, columnspan=2, rowspan=10, sticky=(N, W, E, S))
+        optionFrame.columnconfigure(0, weight=1)
+        optionFrame.rowconfigure(0, weight=1)
+
+        # Option label
+        ttk.Label(master=optionFrame, text="Options").pack(anchor=W)
+        
+        # Name label and entry box
+        ttk.Label(master=optionFrame, text="Name").pack(anchor=W)
+        ttk.Entry(master=optionFrame, textvariable=self.name).pack(anchor=W)
+        
+        # Real data or synthetics option toggle
+        Radiobutton(master=optionFrame, text="Real data", variable=self.dataOrSyn, value=1).pack(anchor=W)
+        Radiobutton(master=optionFrame, text="Synthetics", variable=self.dataOrSyn, value=2).pack(anchor=W)
+
+        # Control buttons for plots
+        ttk.Button(master=optionFrame, text="Start", command=lambda: self.initiate(canvas,ax)).pack(anchor=W)       
+        ttk.Button(master=optionFrame, text="Accept", command=lambda: self.acceptData(canvas,ax)).pack(anchor=W)
+        ttk.Button(master=optionFrame, text="Reset", command=lambda: self.resetCounter()).pack(anchor=W)
+
+        # Frequency options and update button
+        Radiobutton(master=optionFrame, text="10-30s", variable=self.freqBand, value=1).pack(anchor=W)
+        Radiobutton(master=optionFrame, text="10-20s", variable=self.freqBand, value=2).pack(anchor=W)
+        Radiobutton(master=optionFrame, text="Custom", variable=self.freqBand, value=3).pack(anchor=W)
+        ttk.Label(master=optionFrame, text="Min. Period").pack(anchor=W)
+        ttk.Entry(master=optionFrame, textvariable=self.freqMax).pack(anchor=W)
+        ttk.Label(master=optionFrame, text="Max. Period").pack(anchor=W)
+        ttk.Entry(master=optionFrame, textvariable=self.freqMin).pack(anchor=W)
+
+        ttk.Button(master=optionFrame, text="Update", command=lambda: self.updateFreqBand(canvas, ax)).pack(anchor=W)
+
+        # Create labels for distance and azimuth
+        ttk.Label(master=optionFrame, text="Azimuth").pack(anchor=W)
+        ttk.Label(master=optionFrame, textvariable=self.azimuth).pack(anchor=W)
+        ttk.Label(master=optionFrame, text="Distance").pack(anchor=W)
+        ttk.Label(master=optionFrame, textvariable=self.distance).pack(anchor=W)
+
+        # Create box to add a comment to a seismogram
+        ttk.Label(master=optionFrame, text="Comment").pack(anchor=W)
+        self.commentEntry = ScrolledText(master=optionFrame, width=20, height=20)
+        self.commentEntry.pack(anchor=W)
+
+        # Add some padding to all widgets in this frame
+        for child in optionFrame.winfo_children():
+            child.pack_configure(padx=5, pady=5)
+
+        # Create real data canvas
+        fig = plt.figure(figsize=(16,8), dpi=100)
+        ax = fig.add_axes([0.1,0.1,0.8,0.8])
+        canvas = FigureCanvasTkAgg(fig, master=root)
+        canvas.get_tk_widget().grid(row=2, column=2, rowspan=6, columnspan=8)
+        canvas.show()
+        
+        # Create synthetics canvas
+        #fig2 = plt.figure(figsize=(15,5), dpi=100)
+        #ax2 = fig.add_axes([0.1,0.1,0.8,0.8])
+        #canvas2 = FigureCanvasTkAgg(fig, master=root)
+        #canvas2.get_tk_widget().grid(row=8, column=2, rowspan=6, columnspan=8)
+        #canvas2.show()
+        
+        self.update()
+        
+        root.bind("<Right>", lambda _: self.acceptData(canvas, ax))        
 
     def initiate(self, canvas, ax):
         self.dir = 'Data/' + str(self.name.get()) + '/'
@@ -110,14 +178,24 @@ class Application(tk.Frame):
         self.s += 1
         
         if ((self.s) == len(self.seislist)):
+            if (self.clickCounter == 0):
+                self.delayTimes.append(0)
+                self.amplRatios.append(0)
+            self.comment = self.commentEntry.get('1.0', END+'-1c')
+            self.comments.append(str(self.comment))                
             print('Last seismogram')
+            print(self.comments)
             self.writeFile()
         else:
             if (self.clickCounter == 0):
                 self.delayTimes.append(0)
                 self.amplRatios.append(0)
-            self.interests.append(self.interest)
-            self.interest = False
+            print(self.s, len(self.seislist))
+            self.comment = self.commentEntry.get('1.0', END+'-1c')
+            self.comments.append(str(self.comment))
+            self.commentEntry.delete('1.0', END)
+            self.azis.append(self.az)
+            self.dists.append(self.dist)
             self.clickCounter = 0
             self.counterUpdate()
             self.updateFreqBand(canvas, ax)
@@ -127,74 +205,13 @@ class Application(tk.Frame):
         if (self.dataOrSyn.get() == 1):
             peakData = open(self.dir + 'peakData.txt', 'w')
             for i in range(len(self.delayTimes)):
-                peakData.write("%s %s %s %s %s \n" % (self.delayTimes[i], self.amplRatios[i], self.azis[i], self.dists[i], self.interests[i]))
+                peakData.write("%s:%s:%s:%s:%s \n" % (self.delayTimes[i], self.amplRatios[i], self.azis[i], self.dists[i], self.comments[i]))
             peakData.close()
         if (self.dataOrSyn.get() == 2):
             peakData = open(self.dir + '/Synthetics/peakData.txt', 'w')
             for i in range(len(self.delayTimes)):
-                peakData.write("%s %s %s %s %s \n" % (self.delayTimes[i], self.amplRatios[i], self.azis[i], self.dists[i], self.interests[i]))
+                peakData.write("%s %s %s %s %s \n" % (self.delayTimes[i], self.amplRatios[i], self.azis[i], self.dists[i], self.comments[i]))
             peakData.close()
-
-    def addInterest(self):
-        self.interest = True
-                
-    def createWidgets(self):
-        # Create options section
-        optionFrame = ttk.Frame(root, padding="12 12 12 12", relief=RAISED)
-        optionFrame.grid(column=0, row=2, columnspan=2, rowspan=6, sticky=(N, W, E, S))
-        optionFrame.columnconfigure(0, weight=1)
-        optionFrame.rowconfigure(0, weight=1)
-
-        # Option label
-        ttk.Label(master=optionFrame, text="Options").pack(anchor=W)
-        
-        # Name label and entry box
-        ttk.Label(master=optionFrame, text="Name").pack(anchor=W)
-        ttk.Entry(master=optionFrame, textvariable=self.name).pack(anchor=W)
-        
-        # Real data or synthetics option toggle
-        Radiobutton(master=optionFrame, text="Real data", variable=self.dataOrSyn, value=1).pack(anchor=W)
-        Radiobutton(master=optionFrame, text="Synthetics", variable=self.dataOrSyn, value=2).pack(anchor=W)
-
-        # Control buttons for plots
-        ttk.Button(master=optionFrame, text="Start", command=lambda: self.initiate(canvas,ax)).pack(anchor=W)       
-        ttk.Button(master=optionFrame, text="Accept", command=lambda: self.acceptData(canvas,ax)).pack(anchor=W)
-        ttk.Button(master=optionFrame, text="Reset", command=lambda: self.resetCounter()).pack(anchor=W)
-
-        # Frequency options and update button
-        Radiobutton(master=optionFrame, text="10-30s", variable=self.freqBand, value=1).pack(anchor=W)
-        Radiobutton(master=optionFrame, text="10-20s", variable=self.freqBand, value=2).pack(anchor=W)
-        Radiobutton(master=optionFrame, text="Custom", variable=self.freqBand, value=3).pack(anchor=W)
-        ttk.Label(master=optionFrame, text="Min. Period").pack(anchor=W)
-        ttk.Entry(master=optionFrame, textvariable=self.freqMax).pack(anchor=W)
-        ttk.Label(master=optionFrame, text="Max. Period").pack(anchor=W)
-        ttk.Entry(master=optionFrame, textvariable=self.freqMin).pack(anchor=W)
-
-        ttk.Button(master=optionFrame, text="Update", command=lambda: self.updateFreqBand(canvas, ax)).pack(anchor=W)
-
-        # Create labels for distance and azimuth
-        ttk.Label(master=optionFrame, text="Azimuth").pack(anchor=W)
-        ttk.Label(master=optionFrame, textvariable=self.azimuth).pack(anchor=W)
-        ttk.Label(master=optionFrame, text="Distance").pack(anchor=W)
-        ttk.Label(master=optionFrame, textvariable=self.distance).pack(anchor=W)
-
-        # Create button to make special note for a particular seismogram
-        ttk.Button(master=optionFrame, text="Interest", command=lambda: self.addInterest()).pack(anchor=W)
-        
-        # Add some padding to all widgets in this frame
-        for child in optionFrame.winfo_children():
-            child.pack_configure(padx=5, pady=5)
-
-        # Create canvas
-        fig = plt.figure(figsize=(16,8), dpi=100)
-        ax = fig.add_axes([0.1,0.1,0.8,0.8])
-        canvas = FigureCanvasTkAgg(fig, master=root)
-        canvas.get_tk_widget().grid(row=2, column=2, rowspan=6, columnspan=8)
-        canvas.show()
-
-        self.update()
-        
-        root.bind("<Right>", lambda _: self.acceptData(canvas, ax))
 
     def plot(self, canvas, ax):
         # Clear current plot
@@ -216,9 +233,6 @@ class Application(tk.Frame):
 
         self.az = seis[0].stats['az']
         self.dist = seis[0].stats['dist']
-
-        self.azis.append(self.az)
-        self.dists.append(self.dist)
 
         self.seisT.data = np.gradient(self.seisT.data, self.seisT.stats.delta)
 
@@ -255,9 +269,6 @@ class Application(tk.Frame):
 
         self.az = seis[0].stats['az']
         self.dist = seis[0].stats['dist']
-
-        self.azis.append(self.az)
-        self.dists.append(self.dist)
 
         while len(nw) < 2:
             nw = '_' + nw
@@ -314,13 +325,11 @@ class Application(tk.Frame):
 
     # Function that calculates the dt and the amplitude ratio given 2 indices
     def calcValues(self, xArr, idx1, idx2):
-        print(xArr[idx2], xArr[idx1])
         delayTime = xArr[idx2] - xArr[idx1]
         if (self.dataOrSyn.get() == 1):
             amplRatio = self.seisT.data[idx1] / self.seisT.data[idx2]
         if (self.dataOrSyn.get() == 2):
             amplRatio = self.seistoplot[idx1] / self.seistoplot[idx2]
-        print(delayTime, amplRatio)
         self.delayTimes.append(delayTime)
         self.amplRatios.append(amplRatio)
         

@@ -50,10 +50,6 @@ class Application(tk.Frame):
         self.name = StringVar()
         self.event = StringVar()
         self.eventName = StringVar()
-        ttk.Label(master=root, text="Name").grid(row=1, column=0)
-        nameEntry = ttk.Entry(master=root, textvariable=self.name)
-        nameEntry.grid(row=1, column=1, columnspan=2)
-        nameEntry.focus_set()
 
         self.createWidgets()
 
@@ -73,7 +69,7 @@ class Application(tk.Frame):
 
     def counterUpdate(self):
         self.eventName.set(str(self.seislist[self.s]))
-        self.event.set(str(self.s) + ' / ' + str(len(self.seislist)))
+        self.event.set(str(self.s + 1) + ' / ' + str(len(self.seislist)))
         
     def resetCounter(self):
         print(self.s)
@@ -117,27 +113,45 @@ class Application(tk.Frame):
         self.plot(canvas, ax, canvas2, ax2)
 
     def createWidgets(self):
-        ttk.Button(master=root, text="Start", command=lambda: self.initiate(canvas,ax,canvas2,ax2)).grid(row=1, column=3)        
-        ttk.Button(master=root, text="Accept", command=lambda: self.acceptData(canvas,ax,canvas2,ax2)).grid(row=1, column=4)
-        ttk.Button(master=root, text="Reject", command=lambda: self.rejectData(canvas,ax,canvas2,ax2)).grid(row=1, column=5)
-        ttk.Button(master=root, text="Invert", command=lambda: self.invertData(canvas,ax,canvas2,ax2)).grid(row=1, column=6)
-        ttk.Button(master=root, text="Reset", command=lambda: self.resetCounter()).grid(row=1, column=7)
+        # Create options section
+        optionFrame = ttk.Frame(root, padding="12 12 12 12", relief=RAISED)
+        optionFrame.grid(column=0, row=2, columnspan=2, rowspan=12, sticky=(N, W, E, S))
+        optionFrame.columnconfigure(0, weight=1)
+        optionFrame.rowconfigure(0, weight=1)
+
+        # Option label
+        ttk.Label(master=optionFrame, text="Options").pack(anchor=W)
+        
+        # Name label and entry box
+        ttk.Label(master=optionFrame, text="Name").pack(anchor=W)
+        ttk.Entry(master=optionFrame, textvariable=self.name).pack(anchor=W)
+
+        # Control buttons for plots
+        ttk.Button(master=optionFrame, text="Start", command=lambda: self.initiate(canvas,ax,canvas2,ax2)).pack(anchor=W)       
+        ttk.Button(master=optionFrame, text="Accept", command=lambda: self.acceptData(canvas,ax,canvas2,ax2)).pack(anchor=W)
+        ttk.Button(master=optionFrame, text="Reject", command=lambda: self.rejectData(canvas,ax,canvas2,ax2)).pack(anchor=W)
+        ttk.Button(master=optionFrame, text="Invert", command=lambda: self.invertData(canvas,ax,canvas2,ax2)).pack(anchor=W)        
+        ttk.Button(master=optionFrame, text="Reset", command=lambda: self.resetCounter()).pack(anchor=W)
 
         # Create labels so can track which event is being viewed
         ttk.Label(master=root, textvariable=self.event).grid(row=4, column=5)
         ttk.Label(master=root, textvariable=self.eventName).grid(row=4, column=3, columnspan=2)
 
+        # Add some padding to all widgets in this frame
+        for child in optionFrame.winfo_children():
+            child.pack_configure(padx=5, pady=5)        
+
         # Create canvas
-        fig = plt.figure(figsize=(8,4), dpi=100)
+        fig = plt.figure(figsize=(10,5), dpi=100)
         ax = fig.add_axes([0.1,0.1,0.8,0.8])
         canvas = FigureCanvasTkAgg(fig, master=root)
-        canvas.get_tk_widget().grid(row=2, column=0, columnspan=8)
+        canvas.get_tk_widget().grid(row=2, column=2, rowspan=6, columnspan=8)
         canvas.show()
 
-        fig2 = plt.figure(figsize=(8,4), dpi=100)
+        fig2 = plt.figure(figsize=(10,5), dpi=100)
         ax2 = fig2.add_axes([0.1,0.1,0.8,0.8])
         canvas2 = FigureCanvasTkAgg(fig2, master=root)
-        canvas2.get_tk_widget().grid(row=3, column=0, columnspan=8)
+        canvas2.get_tk_widget().grid(row=8, column=2, rowspan=6, columnspan=8)
         canvas2.show()
 
         self.update()
@@ -158,11 +172,10 @@ class Application(tk.Frame):
         if (self.replot == False):
             seis.filter('highpass', freq=self.fmin, corners=2, zerophase=True)
             seis.filter('lowpass', freq=self.fmax, corners=2, zerophase=True)
-        phase = 'Sdiff'
-        if seis[0].stats.traveltimes[phase] is None:
-            phase = 'S'
 
-        tshift = seis[2].stats['starttime'] - seis[2].stats['eventtime']
+        phase = 'S'
+
+        tshift = seis[0].stats['starttime'] - seis[0].stats['eventtime']
 
         self.seisR = seis.select(channel='BHR')[0]
         self.seisT = seis.select(channel='BHT')[0]
@@ -172,11 +185,10 @@ class Application(tk.Frame):
         # Differentiate data
         self.seisT.data = np.gradient(self.seisT.data, self.seisT.stats.delta)
         self.seisR.data = np.gradient(self.seisR.data, self.seisT.stats.delta)
-        
 
         # Plotting data. Both components normalised by max amplitude on transverse component
-        ax.plot(self.seisT.times() + tshift, self.seisT.data / np.max(self.seisT.data), 'k', linewidth=2)
-        ax2.plot(self.seisR.times() + tshift, self.seisR.data / np.max(self.seisT.data), 'k', linewidth=2)
+        ax.plot(self.seisT.times() + tshift, self.seisT.data / np.max(abs(self.seisT.data)), 'k', linewidth=2)
+        ax2.plot(self.seisR.times() + tshift, self.seisR.data / np.max(abs(self.seisT.data)), 'k', linewidth=2)
 
         # Retrieve synthetic data
         self.synT = seis.select(channel='BXT')[0]
@@ -204,7 +216,10 @@ class Application(tk.Frame):
                 ax.plot(seis[0].stats.traveltimes[k], 0.0, 'g', marker='o', markersize=4)
                 ax.text(seis[0].stats.traveltimes[k], -0.2, k, fontsize=8)
 
-        #ax.title(str(self.seis[0].stats['dist']) + '   ' + str(self.seis[0].stats['az']))
+
+        ax.set_title('%s' % (str(self.eventName.get())), loc='left')
+        ax.set_title('%s' % (str(self.event.get())), loc='right')
+                
         ax.set_ylim([-1.0, 1.0])
         ax.set_xlim([seis[0].stats.traveltimes[phase] - 50, seis[0].stats.traveltimes[phase] + 100])
 

@@ -18,14 +18,6 @@ from matplotlib.colors import LinearSegmentedColormap
 # Event to plot
 name = sys.argv[1]
 
-# Make directories for data
-dir = 'Plots'
-if not os.path.exists(dir):
-    os.makedirs(dir)
-dir = dir + '/' + name + '/'
-if not os.path.exists(dir):
-    os.makedirs(dir)
-
 # Map parameters
 plot_background = False
 depth_background = 2700. # Clustering analysis is only down to 2700 km
@@ -42,18 +34,23 @@ delayTimes = []
 amplRatios = []
 azis = []
 dists = []
+comments = []
+xs = []
+ys = []
+dtdt = []
 for x in lines:
-    delayTimes.append(x.split(' ')[0])
-    amplRatios.append(x.split(' ')[1])
-    azis.append(x.split(' ')[2])
-    dists.append(x.split(' ')[3])    
+    delayTimes.append(float(x.split(':')[0]))
+    amplRatios.append(float(x.split(':')[1]))
+    azis.append(float(x.split(':')[2]))
+    dists.append(float(x.split(':')[3]))
+    comments.append(x.split(':')[4])
 f.close()
-
-print(delayTimes, amplRatios, azis, dists)
 
 # Start map
 m = Basemap(projection='ortho', lat_0=midlat, lon_0=midlon, resolution='i')
 clip_path = m.drawmapboundary()
+cm = plt.cm.get_cmap('jet')
+print(max(delayTimes), min(delayTimes))
 
 # Plot background from the cluster analysis of Cottaar &Lekic 2016
 if plot_background:
@@ -78,7 +75,6 @@ for s in range(len(seislist)):
     # Get event-station pair delay time and amplitude ratio
     delayTime = delayTimes[s]
     amplRatio = amplRatios[s]
-    print(delayTime)
 
     elat = seis[0].stats['evla']
     elon = seis[0].stats['evlo']
@@ -99,20 +95,29 @@ for s in range(len(seislist)):
     # Get bounce location of ScS phase
     turnloc = seis[0].stats.turnpoints["ScS"]
     tlon = turnloc[2]
-    x2, y2 = m(tlon, turnloc[1])
-    print(x2, y2)
-    if (int(delayTime) == 0):
-        m.scatter(x2, y2, s=35, marker='x', alpha=1)
-    else:
-        m.scatter(x2, y2, s=35, c=delayTime, marker='o', alpha=1)
+    x3, y3 = m(tlon, turnloc[1])
 
-plt.colorbar()
+    dtPred = seis[0].stats.traveltimes["ScS"] - seis[0].stats.traveltimes["S"]
+    print(dtPred, delayTime)
+
+    if (delayTime == 0):
+        m.scatter(x3, y3, s=35, c='k', marker='o', alpha=1)
+    else:    
+        xs.append(x3)
+        ys.append(y3)
+        dtdt.append(delayTime - dtPred)
+
+plot = m.scatter(xs, ys, s=35, c=dtdt, vmin=11, vmax=20, marker='o', alpha=1, cmap=cm)
+
+plt.colorbar(plot)
+
+print(dtdt, max(dtdt))
 
 # Location of ULVZ
 x0, y0 = -167.5, 17.5
 R = 7.5
 
-m.tissot(x0, y0, R, 100, facecolor='g', alpha=0.5)
+m.tissot(x0, y0, R, 100, facecolor='g', alpha=0.05)
 
 plt.title('Turning depths in km')
 plt.savefig('Plots/' + name + '/' + 'delayTimeMap.png')

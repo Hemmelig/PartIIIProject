@@ -19,11 +19,7 @@ import matplotlib.cm as cm
 
 #####################################################################################
 
-def plotWithAzimuth(name):
-    # Settings - may want to include this in the GUI once this script is done, but
-    # as it is, each event will require significant editing anyway
-    syn = True
-    real = True
+def plotWithAzimuth(name, syn):
     colour = False
     switch_yaxis = False
 
@@ -33,10 +29,6 @@ def plotWithAzimuth(name):
 
     dir = 'Data/' + name + '/'
     seislist = glob.glob(dir + '/*PICKLE')
-
-    savedir = 'Plots/' + name + '/'
-    if not os.path.exists(savedir):
-        os.makedirs(savedir)
 
     norm = None
     azis = []
@@ -56,93 +48,90 @@ def plotWithAzimuth(name):
             scalarMap = cm.ScalarMappable(norm=cNorm, cmap=plt.get_cmap('jet'))
 
     # Loop through seismograms
-    for s in range(0, len(seislist), 4):
-      #  try:
-            print(s)
-            seis = read(seislist[s], format='PICKLE')
-            azis.append(seis[0].stats['az'])
-            print(seis[0].stats['az'], seis[0].stats['dist'])
-            seistoplot = seis.select(channel='BHT')[0]
+    for s in range(len(seislist)):
+        print(s, len(seislist))
 
-            # Plot synthetics
-            if syn:
+        # Retrieve, filter and differentiate data
+        seis = read(seislist[s], format='PICKLE')
+        seis.filter('highpass', freq=fmin, corners=2, zerophase=True)
+        seis.filter('lowpass', freq=fmax, corners=2, zerophase=True)
+        seistoplot = seis.select(channel='BHT')[0]
+        seistoplot.data = np.gradient(seistoplot.data, seistoplot.stats.delta)
+
+        # list all azimuths
+        azis.append(seis[0].stats['az'])
+
+        # Split seismograms by distance range
+        phase = 'S'
+        if seis[0].stats['dist'] < 85:
+            plt.subplot(1,4,1)
+        elif seis[0].stats['dist'] < 90:
+            plt.subplot(1,4,2)
+        elif seis[0].stats['dist'] < 95:
+            plt.subplot(1,4,3)
+        elif seis[0].stats['dist'] < 100:
+            plt.subplot(1,4,4)
+
+        # Normalise data and shift data up by azimuth
+        norm = 1. * np.max(abs(seistoplot.data))
+        seistoplot.data = seistoplot.data / norm + np.round(seis[0].stats['az'])
+
+        # Time shift to shift data to reference time
+        tshift = seis[0].stats['starttime'] - seis[0].stats['eventtime']
+        seistoplot.times = [x + tshift - seis[0].stats.traveltimes[phase] for x in seistoplot.times()]
+
+        # Retrieve, filter and differentiate synthetics if wanted
+        if syn:
+            try:
                 seissyn = seis.select(channel='BXT')[0]
-
-            # Split seismograms by distance range (Needs to be adapted per event to produce a reasonable plot
-            print(seis[0].stats.traveltimes['Sdiff'])
-            Phase = ['Sdiff', 'S']
-            
-            for x in range(0, 2):
-                if seis[0].stats.traveltimes[Phase[x]] != None:
-                    phase = Phase[x]
-                    if seis[0].stats['dist'] < 85:
-                        plt.subplot(1, 4, 1)
-                    elif seis[0].stats['dist'] < 90:
-                        plt.subplot(1, 4, 2)
-                    elif seis[0].stats['dist'] < 95:
-                        plt.subplot(1, 4, 3)
-                    elif seis[0].stats['dist'] < 100:
-                        plt.subplot(1, 4, 4)
-
-            # Filter data
-   
-            seistoplot.filter('highpass', freq=fmin, corners=2, zerophase=True)
-            seistoplot.filter('lowpass', freq=fmax, corners=2, zerophase=True)
-
-            if syn:
                 seissyn.filter('highpass', freq=fmin, corners=2, zerophase=True)
-                seissyn.filter('lowpass', freq=fmax, corners=2, zerophase=True)
+                seissyn.filter('highpass', freq=fmaz, corners=2, zerophase=True)
+                seissyn.data = np.gradient(seissyn.data, seissyn.stats.delta)
+                seissyn.data = seissyn.data / norm + np.round(seis[0].stats['az'])
+                seissyn.times = [x - seis[0].stats.traveltimes[phase] for x in seissyn.times()]
+            except:
+                print('No synthetics available')
 
-            # Time shift to shift data to reference time
-            tshift = seis[0].stats['starttime'] - seis[0].stats['eventtime']
-            print('max', np.max(seistoplot.times()))
-            if real:
-                if norm == None:
-                    norm = 2. * np.max(seistoplot.data)
-                plt.plot(seistoplot.times() + tshift - seis[0].stats.traveltimes[phase], seistoplot.data / norm + np.round(seis[0].stats['az']), 'k')
+        # Plot data and synthetics if required
+        plt.plot(seistoplot.times, seistoplot.data, 'k', linewidth=1)
+        if syn:
+            try:
+                plt.plot(seissyn.times, seissyn.data, 'b', linewidth=1)
+            except:
+                print('No synthetics available')
 
-            if syn:
-                if norm == None:
-                    norm = 2. * np.max(seissyn.data)
-                plt.plot(seissyn.times() - seis[0].stats.traveltimes[phase], seissyn.data / norm + np.round(seis[0].stats['az']), 'b')
-            print(np.max(seistoplot.data), np.max(seissyn.data))
-            plt.xlim([-30, 40])
-            # Plot travel time predictions
-            for k in seis[0].stats.traveltimes.keys():
-                if seis[0].stats.traveltimes[k] != None:
-                    plt.plot(seis[0].stats.traveltimes[k] - seis[0].stats.traveltimes[phase], np.round(seis[0].stats['az']), 'g', marker='o', markersize=4)
+        # Plot travel time predictions
+        for k in seis[0].stats.traveltimes.keys():
+            if seis[0].stats.traveltimes[k] != None:
+                plt.plot(seis[0].stats.traveltimes[k] - seis[0].stats.traveltimes[phase], np.round(seis[0].stats['az']), 'g', marker='o', markersize=4)
+                # Uncomment line below if wish to display phase names ***TO IMPLEMENT*** Question at start to question if wanted
+                #plt.text(seis[0].stats.traveltimes[k] - seis[0].stats.traveltimes[phase], np.round(seis[0].stats['az'])-0.5, k, fontsize=6)
 
-     #   except:
-     #       pass
+        if syn:
+            try:
+                del seissyn
+            except:
+                print('No synthetics available')
+        del seis    
                     
     # Put labels on graphs
-    plt.subplot(1, 4, 1)
-    plt.title('S dist < 90')
-    plt.ylabel('azimuth (dg)')
-    if switch_yaxis:
-        plt.gca().invert_yaxis()
-
-    plt.ylim(round(min(azis) - 1), round(max(azis) + 1))
-    plt.subplot(1, 4, 2)
-    plt.title('Sdiff dist < 100')
-    plt.xlabel('Time around predicted arrival (s)')
-    if switch_yaxis:
-        plt.gca().invert_yaxis()
-
-    plt.ylim(round(min(azis) - 1), round(max(azis) + 1))
-    plt.subplot(1, 4, 3)
-    plt.title('Sdiff dist < 115')
-    plt.xlabel('Time around predicted arrival (s)')
-    if switch_yaxis:
-        plt.gca().invert_yaxis()
-
-    plt.ylim(round(min(azis) - 1), round(max(azis) + 1))
-    plt.subplot(1, 4, 4)
-    plt.title('Sdiff dist < 120')
-    plt.xlabel('Time around predicted arrival (s)')
-    if switch_yaxis:
-        plt.gca().invert_yaxis()       
+    initDist = 85
+    for i in range(4):   
+        plt.subplot(1,4,i+1)
+        plt.title('S dist < %d' % (initDist + (5 * i)), fontsize=10)
+        if (i == 0):
+            plt.ylabel('Azimuth (dg)')
+        plt.ylim(round(min(azis) - 1), round(max(azis) + 1))        
+        plt.xlim([-20, 60])           
+        plt.xlabel('Time around predicted arrival (s)', fontsize=6)
+        plt.tick_params(axis='both', which='major', labelsize=6)
+        if switch_yaxis:
+            plt.gca().invert_yaxis()      
 
     # Save file and show plot
-    plt.savefig('Plots/' + name + '/' + name + '_data_with_azimuth.pdf')
+    if syn == True:
+        plt.savefig('Plots/' + name + '/' + 'azimuth.pdf')
+    elif syn == False:
+        plt.savefig('Plots/' + name + '/' + 'azimuth_noSyn.pdf')
+
     plt.show()
