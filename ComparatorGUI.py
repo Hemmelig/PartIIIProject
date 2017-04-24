@@ -32,11 +32,17 @@ Discarded data will be moved to a directory called Dump. It might be wise to imp
 '''
 
 class Application(tk.Frame):
+    ABOUT_TEXT = """Instructions for use:
+
+    This software can be used to download and process data from the IRIS
+    catalogue website. """
+    
+    DISCLAIMER = """Author
+
+    This interface was developed by Me."""
+    
     # Initialise counters
     s = 0
-    interest = False
-
-    interests = []
 
     # Filter frequencies
     fmin = 0.
@@ -57,77 +63,13 @@ class Application(tk.Frame):
 
         self.createWidgets()
 
-    def initiate(self, canvas, ax, canvas2, ax2):
-        self.dir = 'Data/' + str(self.name.get()) + '/'
-        self.seislist = glob.glob(self.dir + '/*PICKLE')
-        print(self.seislist)
-
-        self.resetCounter()
-        
-        self.updateFreqBand(canvas, ax, canvas2, ax2)
-
-        self.distAzUpdate()
-
-    def updateFreqBand(self, canvas, ax, canvas2, ax2):
-        freqBand = self.freqBand.get()
-        if (freqBand == 1):
-            self.fmin = 0.033
-            self.fmax = 0.1
-        if (freqBand == 2):
-            self.fmin = 0.05
-            self.fmax = 0.1
-        if (freqBand == 3):
-            self.fmin = 1 / self.freqMin.get()
-            self.fmax = 1 / self.freqMax.get()
-
-        self.plot(canvas, ax)
-        self.plotCSEM(canvas2, ax2)
-
-    def counterUpdate(self):
-        self.eventName.set(str(self.seislist[self.s]))
-        self.event.set(str(self.s + 1) + ' / ' + str(len(self.seislist)))
-
-    def distAzUpdate(self):
-        self.azimuth.set(str(round(self.az, 3)))
-        self.distance.set(str(round(self.dist, 3)))
-        
-    def resetCounter(self):
-        self.s = 0
-#        self.clickCounter = 0
-        self.counterUpdate()
-
-    def acceptData(self, canvas, ax, canvas2, ax2, event=None):
-        self.s += 1
-        
-        if ((self.s) == len(self.seislist)):
-            print('Last seismogram')
-#            self.writeFile()
-        else:
-#            if (self.clickCounter == 0):
-#                self.delayTimes.append(0)
-#                self.amplRatios.append(0)
-            self.interests.append(self.interest)
-            self.interest = False
-#            self.clickCounter = 0
-            self.counterUpdate()
-            self.updateFreqBand(canvas, ax, canvas2, ax2)
-            self.distAzUpdate()
-
-#    def writeFile(self):
-#        peakData = open(self.dir + 'peakData.txt', 'w')
-#        for i in range(len(self.delayTimes)):
-#            peakData.write("%s %s %s %s %s \n" % (self.delayTimes[i], self.amplRatios[i], self.azis[i], self.dists[i], self.interests[i]))
-#        peakData.close()
-
-#        peakData2 = open(self.dir + '/Synthetics/peakData.txt', 'w')
-#        for i in range(len(self.delayTimes)):
-#            peakData2.write("%s %s %s %s %s \n" % (self.delayTimes[i], self.amplRatios[i], self.azis[i], self.dists[i], self.interests[i]))
-#        peakData2.close()
-
-    def addInterest(self):
-        self.interest = True
-                
     def createWidgets(self):
+        # Create menu
+        menubar = Menu(root)
+        menubar.add_command(label="Instructions", command=lambda: self.instructions())
+        menubar.add_command(label="Exit", command=root.quit)
+        root.config(menu=menubar)
+        
         # Create options section
         optionFrame = ttk.Frame(root, padding="12 12 12 12", relief=RAISED)
         optionFrame.grid(column=0, row=2, columnspan=2, rowspan=12, sticky=(N, W, E, S))
@@ -188,6 +130,54 @@ class Application(tk.Frame):
         
         root.bind("<Right>", lambda _: self.acceptData(canvas, ax, canvas2, ax2))
 
+    def initiate(self, canvas, ax, canvas2, ax2):
+        self.dir = 'Data/' + str(self.name.get()) + '/'
+        self.seislist = glob.glob(self.dir + '/*PICKLE')
+        print(self.seislist)
+
+        self.resetCounter()
+        
+        self.updateFreqBand(canvas, ax, canvas2, ax2)
+
+        self.distAzUpdate()
+
+    def updateFreqBand(self, canvas, ax, canvas2, ax2):
+        freqBand = self.freqBand.get()
+        if (freqBand == 1):
+            self.fmin = 0.033
+            self.fmax = 0.1
+        if (freqBand == 2):
+            self.fmin = 0.05
+            self.fmax = 0.1
+        if (freqBand == 3):
+            self.fmin = 1 / self.freqMin.get()
+            self.fmax = 1 / self.freqMax.get()
+
+        self.plot(canvas, ax)
+        self.plotCSEM(canvas2, ax2)
+
+    def counterUpdate(self):
+        self.eventName.set(str(self.seislist[self.s]))
+        self.event.set(str(self.s + 1) + ' / ' + str(len(self.seislist)))
+
+    def distAzUpdate(self):
+        self.azimuth.set(str(round(self.az, 3)))
+        self.distance.set(str(round(self.dist, 3)))
+        
+    def resetCounter(self):
+        self.s = 0
+        self.counterUpdate()
+
+    def acceptData(self, canvas, ax, canvas2, ax2, event=None):
+        self.s += 1
+        
+        if ((self.s) == len(self.seislist)):
+            print('Last seismogram')
+        else:
+            self.counterUpdate()
+            self.updateFreqBand(canvas, ax, canvas2, ax2)
+            self.distAzUpdate()
+                
     def plot(self, canvas, ax):
         # Clear current plot
         ax.clear()
@@ -198,9 +188,7 @@ class Application(tk.Frame):
         seis.filter('highpass', freq=self.fmin, corners=2, zerophase=True)
         seis.filter('lowpass', freq=self.fmax, corners=2, zerophase=True)
         
-        phase = 'Sdiff'
-        if seis[0].stats.traveltimes[phase] is None:
-            phase = 'S'
+        phase = 'S'
 
         self.tshift = seis[2].stats['starttime'] - seis[2].stats['eventtime']
 
@@ -208,9 +196,6 @@ class Application(tk.Frame):
 
         self.az = seis[0].stats['az']
         self.dist = seis[0].stats['dist']
-
-#        self.azis.append(self.az)
-#        self.dists.append(self.dist)
 
         self.seisT.data = np.gradient(self.seisT.data, self.seisT.stats.delta)
 
@@ -222,14 +207,12 @@ class Application(tk.Frame):
             if seis[0].stats.traveltimes[k] != None:
                 ax.plot(seis[0].stats.traveltimes[k], 0.0, 'g', marker='o', markersize=4)
                 ax.text(seis[0].stats.traveltimes[k], -0.2, k, fontsize=8)
-
-        ax.set_ylim([-1.0, 1.0])
-        ax.set_xlim([seis[0].stats.traveltimes[phase] - 50, seis[0].stats.traveltimes[phase] + 100])
-
+                
         ax.set_title('%s' % (str(self.eventName.get())), loc='left')
         ax.set_title('%s' % (str(self.event.get())), loc='right')
-
-#        cid = canvas.mpl_connect('button_press_event', self.__onclick__)
+        
+        ax.set_ylim([-1.0, 1.0])
+        ax.set_xlim([seis[0].stats.traveltimes[phase] - 50, seis[0].stats.traveltimes[phase] + 100])
         
         canvas.draw()
 
@@ -273,40 +256,14 @@ class Application(tk.Frame):
         ax2.set_ylim([-1.0, 1.0])
         ax2.set_xlim([seis[0].stats.traveltimes[phase] - 50, seis[0].stats.traveltimes[phase] + 100])        
 
-#        cid2 = canvas2.mpl_connect('button_press_event', self.__onclick__)
-
         canvas2.draw()
-        
-#    def __onclick__(self, click):
-#        print('Click!')
-#        self.clickCounter += 1
-#        self.point = (click.xdata, click.ydata)
 
-#        xArr = self.seisT.times() + self.tshift
-#        xArr2 = self.times
-#        print(click.xdata)
-            
-#        if (self.clickCounter == 1):
-#            self.idx1 = self.findNearest(xArr, click.xdata)
-#        if (self.clickCounter == 2):
-#            self.idx2 = self.findNearest(xArr, click.xdata)
-#            self.calcValues(xArr, self.idx1, self.idx2)
-            
-#    def findNearest(self, array, value):
-#        idx = (np.abs(array-value)).argmin()
-#        return idx
-
-#    # Function that calculates the dt and the amplitude ratio given 2 indices
-#    def calcValues(self, xArr, idx1, idx2):
-#        print(xArr[idx2], xArr[idx1])
-#        delayTime = xArr[idx2] - xArr[idx1]
-#        if (self.dataOrSyn.get() == 1):
-#            amplRatio = self.seisT.data[idx1] / self.seisT.data[idx2]
-#        if (self.dataOrSyn.get() == 2):
-#            amplRatio = self.seistoplot[idx1] / self.seistoplot[idx2]
-#        print(delayTime, amplRatio)
-#        self.delayTimes.append(delayTime)
-#        self.amplRatios.append(amplRatio)
+    def instructions(self):
+        toplevel = Toplevel()
+        label1 = Label(toplevel, text=self.ABOUT_TEXT, height=0, width=100)
+        label1.pack(anchor=W)
+        label2 = Label(toplevel, text=self.DISCLAIMER, height=0, width=100)
+        label2.pack()        
         
 root = tk.Tk()
 root.title("Part III Project - Data and Synthetics Comparator")

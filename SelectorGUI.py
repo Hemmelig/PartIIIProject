@@ -32,6 +32,15 @@ Discarded data will be moved to a directory called Dump. It might be wise to imp
 '''
 
 class Application(tk.Frame):
+    ABOUT_TEXT = """Instructions for use:
+
+    This software can be used to download and process data from the IRIS
+    catalogue website. """
+    
+    DISCLAIMER = """Author
+
+    This interface was developed by Me."""
+    
     # Initialise counter
     s = 0
 
@@ -50,46 +59,145 @@ class Application(tk.Frame):
         self.name = StringVar()
         self.event = StringVar()
         self.eventName = StringVar()
+        self.azimuth = StringVar()
+        self.distance = StringVar()
+        self.freqBand = IntVar()
+        self.freqBand.set(1)
+        self.freqMin = DoubleVar()
+        self.freqMax = DoubleVar()        
 
         self.createWidgets()
 
+    def createWidgets(self):
+        # Create menu
+        menubar = Menu(root)
+        menubar.add_command(label="Instructions", command=lambda: self.instructions())
+        menubar.add_command(label="Exit", command=root.quit)
+        root.config(menu=menubar)       
+        # Create options section
+        optionFrame = ttk.Frame(root, padding="12 12 12 12", relief=RAISED)
+        optionFrame.grid(column=0, row=2, columnspan=2, rowspan=12, sticky=(N, W, E, S))
+        optionFrame.columnconfigure(0, weight=1)
+        optionFrame.rowconfigure(0, weight=1)
+
+        # Option label
+        ttk.Label(master=optionFrame, text="Options").pack(anchor=W)
+        
+        # Name label and entry box
+        ttk.Label(master=optionFrame, text="Name").pack(anchor=W)
+        ttk.Entry(master=optionFrame, textvariable=self.name).pack(anchor=W)
+
+        # Control buttons for plots
+        ttk.Button(master=optionFrame, text="Start", command=lambda: self.initiate(canvas,ax,canvas2,ax2)).pack(anchor=W)       
+        ttk.Button(master=optionFrame, text="Accept", command=lambda: self.acceptData(canvas,ax,canvas2,ax2)).pack(anchor=W)
+        ttk.Button(master=optionFrame, text="Reject", command=lambda: self.rejectData(canvas,ax,canvas2,ax2)).pack(anchor=W)
+        ttk.Button(master=optionFrame, text="Invert", command=lambda: self.invertData(canvas,ax,canvas2,ax2)).pack(anchor=W)        
+        ttk.Button(master=optionFrame, text="Reset", command=lambda: self.resetCounter()).pack(anchor=W)
+        
+        # Frequency options and update button
+        Radiobutton(master=optionFrame, text="10-30s", variable=self.freqBand, value=1).pack(anchor=W)
+        Radiobutton(master=optionFrame, text="10-20s", variable=self.freqBand, value=2).pack(anchor=W)
+        Radiobutton(master=optionFrame, text="Custom", variable=self.freqBand, value=3).pack(anchor=W)
+        ttk.Label(master=optionFrame, text="Min. Period").pack(anchor=W)
+        ttk.Entry(master=optionFrame, textvariable=self.freqMax).pack(anchor=W)
+        ttk.Label(master=optionFrame, text="Max. Period").pack(anchor=W)
+        ttk.Entry(master=optionFrame, textvariable=self.freqMin).pack(anchor=W)
+
+        ttk.Button(master=optionFrame, text="Update", command=lambda: self.updateFreqBand(canvas, ax, canvas2, ax2)).pack(anchor=W)
+        
+        # Create labels for distance and azimuth
+        ttk.Label(master=optionFrame, text="Azimuth").pack(anchor=W)
+        ttk.Label(master=optionFrame, textvariable=self.azimuth).pack(anchor=W)
+        ttk.Label(master=optionFrame, text="Distance").pack(anchor=W)
+        ttk.Label(master=optionFrame, textvariable=self.distance).pack(anchor=W)
+
+        # Add some padding to all widgets in this frame
+        for child in optionFrame.winfo_children():
+            child.pack_configure(padx=5, pady=5)        
+
+        # Create transverse canvas
+        fig = plt.figure(figsize=(10,5), dpi=100)
+        ax = fig.add_axes([0.1,0.1,0.8,0.8])
+        canvas = FigureCanvasTkAgg(fig, master=root)
+        canvas.get_tk_widget().grid(row=2, column=2, rowspan=6, columnspan=8)
+        canvas.show()
+
+        # Create radial canvas
+        fig2 = plt.figure(figsize=(10,5), dpi=100)
+        ax2 = fig2.add_axes([0.1,0.1,0.8,0.8])
+        canvas2 = FigureCanvasTkAgg(fig2, master=root)
+        canvas2.get_tk_widget().grid(row=8, column=2, rowspan=6, columnspan=8)
+        canvas2.show()
+
+        self.update()
+        
+        root.bind("<Right>", lambda _: self.acceptData(canvas, ax, canvas2, ax2))
+        root.bind("<Left>", lambda _: self.rejectData(canvas, ax, canvas2, ax2))
+        root.bind("<Up>", lambda _: self.invertData(canvas, ax, canvas2, ax2))      
+
+        
     def initiate(self, canvas, ax, canvas2, ax2):
         dir = 'Data/' + str(self.name.get()) + '/'
         self.seislist = glob.glob(dir + '/*PICKLE')
         print(self.seislist)
 
         self.resetCounter()
+
+        self.updateFreqBand(canvas, ax, canvas2, ax2)
         
         # Create directory to dump data into
         self.dirdump = dir + 'Dump'
         if not os.path.exists(self.dirdump):
             os.makedirs(self.dirdump)
 
+        self.distAzUpdate()
+
+    def updateFreqBand(self, canvas, ax, canvas2, ax2):
+        freqBand = self.freqBand.get()
+        if (freqBand == 1):
+            self.fmin = 0.033
+            self.fmax = 0.1
+        if (freqBand == 2):
+            self.fmin = 0.05
+            self.fmax = 0.1
+        if (freqBand == 3):
+            self.fmin = 1 / self.freqMin.get()
+            self.fmax = 1 / self.freqMax.get()
+
         self.plot(canvas, ax, canvas2, ax2)
 
     def counterUpdate(self):
         self.eventName.set(str(self.seislist[self.s]))
         self.event.set(str(self.s + 1) + ' / ' + str(len(self.seislist)))
+
+    def distAzUpdate(self):
+        self.azimuth.set(str(round(self.az, 3)))
+        self.distance.set(str(round(self.dist, 3)))
         
     def resetCounter(self):
-        print(self.s)
         self.s = 0
-        self.clickCounter = 0
         self.counterUpdate()
 
     def rejectData(self, canvas, ax, canvas2, ax2, event=None):
         shutil.move(self.seislist[self.s], self.dirdump)
         self.s += 1
-        self.clickCounter = 0
-        self.counterUpdate
-        self.plot(canvas, ax, canvas2, ax2)
+
+        if ((self.s) == len(self.seislist)):
+            print('Last seismogram')
+        else:
+            self.counterUpdate()
+            self.updateFreqBand(canvas, ax, canvas2, ax2)
+            self.distAzUpdate()
 
     def acceptData(self, canvas, ax, canvas2, ax2, event=None):
         self.s += 1
-        self.clickCounter = 0
-        self.counterUpdate
-        print('Data accepted')
-        self.plot(canvas, ax, canvas2, ax2)
+
+        if ((self.s) == len(self.seislist)):
+            print('Last seismogram')
+        else:
+            self.counterUpdate()
+            self.updateFreqBand(canvas, ax, canvas2, ax2)
+            self.distAzUpdate()
 
     def invertData(self, canvas, ax, canvas2, ax2, event=None):
         self.seisR.data = self.seisR.data * -1.
@@ -110,55 +218,7 @@ class Application(tk.Frame):
         filename = self.seislist[self.s]
         seisnew.write(filename, 'PICKLE')
         self.replot = True
-        self.plot(canvas, ax, canvas2, ax2)
-
-    def createWidgets(self):
-        # Create options section
-        optionFrame = ttk.Frame(root, padding="12 12 12 12", relief=RAISED)
-        optionFrame.grid(column=0, row=2, columnspan=2, rowspan=12, sticky=(N, W, E, S))
-        optionFrame.columnconfigure(0, weight=1)
-        optionFrame.rowconfigure(0, weight=1)
-
-        # Option label
-        ttk.Label(master=optionFrame, text="Options").pack(anchor=W)
-        
-        # Name label and entry box
-        ttk.Label(master=optionFrame, text="Name").pack(anchor=W)
-        ttk.Entry(master=optionFrame, textvariable=self.name).pack(anchor=W)
-
-        # Control buttons for plots
-        ttk.Button(master=optionFrame, text="Start", command=lambda: self.initiate(canvas,ax,canvas2,ax2)).pack(anchor=W)       
-        ttk.Button(master=optionFrame, text="Accept", command=lambda: self.acceptData(canvas,ax,canvas2,ax2)).pack(anchor=W)
-        ttk.Button(master=optionFrame, text="Reject", command=lambda: self.rejectData(canvas,ax,canvas2,ax2)).pack(anchor=W)
-        ttk.Button(master=optionFrame, text="Invert", command=lambda: self.invertData(canvas,ax,canvas2,ax2)).pack(anchor=W)        
-        ttk.Button(master=optionFrame, text="Reset", command=lambda: self.resetCounter()).pack(anchor=W)
-
-        # Create labels so can track which event is being viewed
-        ttk.Label(master=root, textvariable=self.event).grid(row=4, column=5)
-        ttk.Label(master=root, textvariable=self.eventName).grid(row=4, column=3, columnspan=2)
-
-        # Add some padding to all widgets in this frame
-        for child in optionFrame.winfo_children():
-            child.pack_configure(padx=5, pady=5)        
-
-        # Create canvas
-        fig = plt.figure(figsize=(10,5), dpi=100)
-        ax = fig.add_axes([0.1,0.1,0.8,0.8])
-        canvas = FigureCanvasTkAgg(fig, master=root)
-        canvas.get_tk_widget().grid(row=2, column=2, rowspan=6, columnspan=8)
-        canvas.show()
-
-        fig2 = plt.figure(figsize=(10,5), dpi=100)
-        ax2 = fig2.add_axes([0.1,0.1,0.8,0.8])
-        canvas2 = FigureCanvasTkAgg(fig2, master=root)
-        canvas2.get_tk_widget().grid(row=8, column=2, rowspan=6, columnspan=8)
-        canvas2.show()
-
-        self.update()
-        
-        root.bind("<Right>", lambda _: self.acceptData(canvas, ax, canvas2, ax2))
-        root.bind("<Left>", lambda _: self.rejectData(canvas, ax, canvas2, ax2))
-        root.bind("<Up>", lambda _: self.invertData(canvas, ax, canvas2, ax2))      
+        self.updateFreqBand(canvas, ax, canvas2, ax2)
 
     def plot(self, canvas, ax, canvas2, ax2):
         # Clear current plot
@@ -166,7 +226,6 @@ class Application(tk.Frame):
         ax2.clear()
 
         # Get current data
-        print(self.s, len(self.seislist))
         seis = read(self.seislist[int(self.s)], format='PICKLE')
 
         if (self.replot == False):
@@ -182,9 +241,13 @@ class Application(tk.Frame):
         self.seisZ = seis.select(channel='BHZ')
         self.seisStats = seis[0].stats
 
+        self.az = seis[0].stats['az']
+        self.dist = seis[0].stats['dist']        
+
         # Differentiate data
-        self.seisT.data = np.gradient(self.seisT.data, self.seisT.stats.delta)
-        self.seisR.data = np.gradient(self.seisR.data, self.seisT.stats.delta)
+        if (self.replot == False):
+            self.seisT.data = np.gradient(self.seisT.data, self.seisT.stats.delta)
+            self.seisR.data = np.gradient(self.seisR.data, self.seisT.stats.delta)
 
         # Plotting data. Both components normalised by max amplitude on transverse component
         ax.plot(self.seisT.times() + tshift, self.seisT.data / np.max(abs(self.seisT.data)), 'k', linewidth=2)
@@ -196,19 +259,18 @@ class Application(tk.Frame):
         self.synZ = seis.select(channel='BXZ')[0]
         
         # Plot synthetic data
-        if (self.syn == True):
-            if (self.replot == False):
-                self.synT.filter('highpass', freq=self.fmin, corners=2, zerophase=True)
-                self.synT.filter('lowpass', freq=self.fmax, corners=2, zerophase=True)
+#        if (self.replot == False):
+#            self.synT.filter('highpass', freq=self.fmin, corners=2, zerophase=True)
+#            self.synT.filter('lowpass', freq=self.fmax, corners=2, zerophase=True)
 
-                self.synR.filter('highpass', freq=self.fmin, corners=2, zerophase=True)
-                self.synR.filter('lowpass', freq=self.fmax, corners=2, zerophase=True)
+#            self.synR.filter('highpass', freq=self.fmin, corners=2, zerophase=True)
+#            self.synR.filter('lowpass', freq=self.fmax, corners=2, zerophase=True)
 
-            self.synR.data = np.gradient(self.synR.data, self.synR.stats.delta)
-            self.synT.data = np.gradient(self.synT.data, self.synT.stats.delta)
-                
-            ax2.plot(self.synR.times(), self.synR.data / np.max(self.seisT.data), color=[0.5,0.5,0.5])
-            ax.plot(self.synT.times(), self.synT.data / np.max(self.seisT.data), color=[0.5,0.5,0.5])
+        self.synR.data = np.gradient(self.synR.data, self.synR.stats.delta)
+        self.synT.data = np.gradient(self.synT.data, self.synT.stats.delta)
+        
+        ax.plot(self.synT.times(), self.synT.data / np.max(self.seisT.data), color=[0.5,0.5,0.5])
+        ax2.plot(self.synR.times(), self.synR.data / np.max(self.seisT.data), color=[0.5,0.5,0.5])
 
         # Plotting travel time predictions
         for k in seis[0].stats.traveltimes.keys():
@@ -229,7 +291,14 @@ class Application(tk.Frame):
         canvas.draw()
         canvas2.draw()
 
-        self.replot = False           
+        self.replot = False
+
+    def instructions(self):
+        toplevel = Toplevel()
+        label1 = Label(toplevel, text=self.ABOUT_TEXT, height=0, width=100)
+        label1.pack(anchor=W)
+        label2 = Label(toplevel, text=self.DISCLAIMER, height=0, width=100)
+        label2.pack()        
     
 root = tk.Tk()
 root.title("Part III Project - Data Selector")

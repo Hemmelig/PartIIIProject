@@ -29,7 +29,7 @@ azis = []
 
 # Loop through seismograms
 for s in range(len(seislist)):
-    print(s, len(seislist))
+    print(s + 1, len(seislist))
 
     # Retrieve, filter and differentiate data
     seis = read(seislist[s], format='PICKLE')
@@ -55,7 +55,8 @@ for s in range(len(seislist)):
         plt.subplot(1,4,4)
     
     # Normalise data and shift data up by azimuth
-    norm = 1. * np.max(abs(seistoplot.data))
+    if norm == None:
+        norm = 1. * np.max(abs(seistoplot.data))
     seistoplot.data = seistoplot.data / norm + np.round(seis[0].stats['az'])
 
     # Time shift to shift data to reference time

@@ -1,30 +1,23 @@
 #!/usr/bin/env python3
 
-#####################################################################################
-### Import modules
-#####################################################################################
-
-import obspy, obspy.signal, os.path, time, glob, shutil, scipy, sys, subprocess
-from obspy import UTCDateTime, read
-from obspy.core import Stream, Trace, event
-from obspy.taup.taup import getTravelTimes
+import obspy
+import obspy.signal
+import os.path
+import glob
+import scipy
+import sys
+from obspy import read
 import matplotlib.pyplot as plt
 import numpy as np
-from obspy.io.xseed import Parser
-from obspy.clients.arclink import Client as ARCLINKClient
-from obspy.clients.fdsn import Client as IRISClient
-from subprocess import call
-import matplotlib.colors as colors
-import matplotlib.cm as cm
 
 #####################################################################################
 
-def plotWithDistance(name):
+def plotDataDistance(name, canvas, ax):
     # Settings - may want to include this in the GUI once this script is done, but
     # as it is, each event will require significant editing anyway
     syn = True
     real = True
-    colour = False
+
     switch_yaxis = False
 
     # Frequencies for filter in Hz
@@ -96,15 +89,14 @@ def plotWithDistance(name):
             pass
                 
     # Put labels on graphs
-    plt.subplot(1, 1, 1)
-    plt.title(' ')
-    plt.ylabel('Distance (dg)')
-    plt.xlabel('Time around predicted arrival (s)')
-    plt.xlim([0, 2700])
-    plt.ylim([60, 110])
+    ax.set_title(' ')
+    ax.set_ylabel('Distance (dg)')
+    ax.set_xlabel('Time around predicted arrival (s)')
+    ax.set_xlim([1300, 1450])
+    ax.set_ylim([75, 100])
     if switch_yaxis:
         plt.gca().invert_yaxis()      
 
     # Save file and show plot
-    #plt.savefig('Plots/' + name + '/' + name + '_data_with_distance.pdf')
-    plt.show()
+    #ax.savefig('Plots/' + name + '/' + name + '_data_with_distance.pdf')
+    #ax.show()

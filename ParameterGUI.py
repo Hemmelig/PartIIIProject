@@ -33,6 +33,15 @@ Discarded data will be moved to a directory called Dump. It might be wise to imp
 '''
 
 class Application(tk.Frame):
+    ABOUT_TEXT = """Instructions for use:
+
+    This software can be used to download and process data from the IRIS
+    catalogue website. """
+    
+    DISCLAIMER = """Author
+
+    This interface was developed by Me."""
+    
     # Initialise counters
     s = 0
     clickCounter = 0
@@ -67,6 +76,12 @@ class Application(tk.Frame):
         self.createWidgets()
 
     def createWidgets(self):
+        # Create menu
+        menubar = Menu(root)
+        menubar.add_command(label="Instructions", command=lambda: self.instructions())
+        menubar.add_command(label="Exit", command=root.quit)
+        root.config(menu=menubar)
+        
         # Create options section
         optionFrame = ttk.Frame(root, padding="12 12 12 12", relief=RAISED)
         optionFrame.grid(column=0, row=2, columnspan=2, rowspan=10, sticky=(N, W, E, S))
@@ -108,7 +123,7 @@ class Application(tk.Frame):
 
         # Create box to add a comment to a seismogram
         ttk.Label(master=optionFrame, text="Comment").pack(anchor=W)
-        self.commentEntry = ScrolledText(master=optionFrame, width=20, height=20)
+        self.commentEntry = ScrolledText(master=optionFrame, width=20, height=10)
         self.commentEntry.pack(anchor=W)
 
         # Add some padding to all widgets in this frame
@@ -235,6 +250,7 @@ class Application(tk.Frame):
         self.dist = seis[0].stats['dist']
 
         self.seisT.data = np.gradient(self.seisT.data, self.seisT.stats.delta)
+        print(self.seisT.stats.delta)
 
         # Plotting data. Both components normalised by max amplitude on transverse component
         ax.plot(self.seisT.times() + self.tshift, self.seisT.data / np.max(abs(self.seisT.data)), 'k', linewidth=2)
@@ -309,30 +325,57 @@ class Application(tk.Frame):
         self.point = (click.xdata, click.ydata)
         if (self.dataOrSyn.get() == 1):
             xArr = self.seisT.times() + self.tshift
+            array = self.seisT.data
         if (self.dataOrSyn.get() == 2):
             xArr = self.times
+            array = self.seistoplot
         print(click.xdata)
             
         if (self.clickCounter == 1):
-            self.idx1 = self.findNearest(xArr, click.xdata)
-        if (self.clickCounter == 2):
-            self.idx2 = self.findNearest(xArr, click.xdata)
+            idxtmp = (np.abs(xArr - click.xdata)).argmin()
+            self.idx1 = self.findMax(array, idxtmp)
+        elif (self.clickCounter == 2):
+            idxtmp = (np.abs(xArr - click.xdata)).argmin()
+            self.idx2 = self.findMin(array, idxtmp)
             self.calcValues(xArr, self.idx1, self.idx2)
             
-    def findNearest(self, array, value):
-        idx = (np.abs(array-value)).argmin()
-        return idx
+    def findMax(self, array, idxtmp):
+        while (np.abs(array[idxtmp]) < np.abs(array[idxtmp + 1])):
+            print(idxtmp)
+            idxtmp += 1
+        while (np.abs(array[idxtmp]) < np.abs(array[idxtmp - 1])):
+            print(idxtmp)
+            idxtmp -= 1
+        return idxtmp
+
+    def findMin(self, array, idxtmp):
+        while (array[idxtmp] > array[idxtmp + 1]):
+            print(idxtmp)
+            idxtmp += 1
+        while (array[idxtmp] > array[idxtmp - 1]):
+            print(idxtmp)
+            idxtmp -= 1
+        return idxtmp                      
 
     # Function that calculates the dt and the amplitude ratio given 2 indices
     def calcValues(self, xArr, idx1, idx2):
+        print(xArr[idx2], xArr[idx1])
         delayTime = xArr[idx2] - xArr[idx1]
         if (self.dataOrSyn.get() == 1):
             amplRatio = self.seisT.data[idx1] / self.seisT.data[idx2]
         if (self.dataOrSyn.get() == 2):
             amplRatio = self.seistoplot[idx1] / self.seistoplot[idx2]
+        print(delayTime)
         self.delayTimes.append(delayTime)
         self.amplRatios.append(amplRatio)
         
+    def instructions(self):
+        toplevel = Toplevel()
+        label1 = Label(toplevel, text=self.ABOUT_TEXT, height=0, width=100)
+        label1.pack(anchor=W)
+        label2 = Label(toplevel, text=self.DISCLAIMER, height=0, width=100)
+        label2.pack()
+
 root = tk.Tk()
 root.title("Part III Project - Parameter Calculator")
 app = Application(master=root)

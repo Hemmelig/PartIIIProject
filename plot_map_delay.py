@@ -50,7 +50,6 @@ f.close()
 m = Basemap(projection='ortho', lat_0=midlat, lon_0=midlon, resolution='i')
 clip_path = m.drawmapboundary()
 cm = plt.cm.get_cmap('jet')
-print(max(delayTimes), min(delayTimes))
 
 # Plot background from the cluster analysis of Cottaar &Lekic 2016
 if plot_background:
@@ -76,12 +75,11 @@ for s in range(len(seislist)):
     delayTime = delayTimes[s]
     amplRatio = amplRatios[s]
 
-    elat = seis[0].stats['evla']
-    elon = seis[0].stats['evlo']
-    depth = seis[0].stats['evdp']
-
     # Plot event star for first station
     if plot_event:
+        elat = seis[0].stats['evla']
+        elon = seis[0].stats['evlo']
+        depth = seis[0].stats['evdp']        
         x2, y2 = m(elon+360., elat)
         m.scatter(x2, y2, s=265, marker='*', facecolors='y', alpha=1)
         plot_event = False
@@ -119,7 +117,7 @@ R = 7.5
 
 m.tissot(x0, y0, R, 100, facecolor='g', alpha=0.05)
 
-plt.title('Turning depths in km')
+plt.title('Delay time map')
 plt.savefig('Plots/' + name + '/' + 'delayTimeMap.png')
 plt.savefig('Plots/' + name + '/' + 'delayTimeMap.pdf')
             

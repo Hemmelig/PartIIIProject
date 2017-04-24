@@ -27,14 +27,32 @@ from add_event_cmt import *
 from plot_data_with_azimuth import *
 from plot_data_with_distance import *
 from add_turn_points import *
+from make_stationlist import *
 
 #####################################################################################
     
 class Application(tk.Frame):
-    ABOUT_TEXT = """Instructions for use:
+    ABOUT_TEXT = """This software can be used to download and process data from the IRIS
+    catalogue website (ds.iris.edu/wilber3/find_event).
 
-    This software can be used to download and process data from the IRIS
-    catalogue website. """
+    Instructions for use:
+
+    1. Identify an event of interest on the interactive web application. Complete the event
+    parameters section. The format for the start and end times should be:
+    
+    YYYY-MM-DDTHH:MM:SS.mSmSmS
+
+    Next, specify the station parameters in the next section. This will help to narrow down
+    the search. Once done, press Download.
+
+    2. Once the data for an event has been downloaded and stored in /Data/Originals/. press
+    Process to sift the data for any dataless stations etc.
+
+    3. Next, visit the global CMT website and find the CMT data for the chosen event. Open
+    a file in the textpad section and fill in the required data as a dictionary. Press Add CMT.
+
+    4. 
+     """
     
     DISCLAIMER = """Author
 
@@ -68,7 +86,7 @@ class Application(tk.Frame):
 
         # Create frames and populate with widgets
         # Mainframe
-        self.mainFrame = ttk.Frame(root, padding="3 3 12 12")
+        self.mainFrame = ttk.Frame(root, padding="3 3 3 3")
         self.mainFrame.grid(column=0, row=0, sticky=(N, W, E, S))
         self.mainFrame.columnconfigure(0, weight=1)
         self.mainFrame.rowconfigure(0, weight=1)
@@ -87,13 +105,14 @@ class Application(tk.Frame):
         ttk.Button(nameFrame, text="4. Add travel times", command=lambda: self.addTravelTimes()).pack(anchor=W)
         ttk.Button(nameFrame, text="5. Add synthetics", command=lambda: self.addSynths()).pack(anchor=W)
         ttk.Button(nameFrame, text="6. Add turn points", command=lambda: self.addTurnPoints()).pack(anchor=W)
+        ttk.Button(nameFrame, text="7. Make station list", command=lambda: self.makeStations()).pack(anchor=W)
 
         for child in nameFrame.winfo_children():
             child.pack_configure(padx=5, pady=5)         
 
         # CMT frame
         cmtFrame = ttk.Frame(self.mainFrame, padding="3 3 12 12", relief=RAISED)
-        cmtFrame.grid(column=2, row=0, columnspan=8, rowspan=8, sticky=(N, W, E, S))
+        cmtFrame.grid(column=2, row=0, columnspan=6, rowspan=8, sticky=(N, W, E, S))
         cmtFrame.columnconfigure(0, weight=1)
         cmtFrame.rowconfigure(0, weight=1)
 
@@ -102,7 +121,7 @@ class Application(tk.Frame):
     
         ttk.Label(cmtEntryFrame, text="CMT Source Data").pack(anchor=N)
         
-        self.cmtEntry = ScrolledText(cmtEntryFrame)
+        self.cmtEntry = ScrolledText(cmtEntryFrame, width=50, height=20)
         self.cmtEntry.pack(anchor=W)
 
         cmtSaveFrame = ttk.Frame(cmtFrame, padding="12 12 12 12")
@@ -112,7 +131,7 @@ class Application(tk.Frame):
         ttk.Button(cmtSaveFrame, text="Save", command=lambda: self.saveCommand()).pack(anchor=W)        
 
         # Event parameter frame
-        eventFrame = ttk.Frame(self.mainFrame, padding="3 3 12 12", relief=RAISED)
+        eventFrame = ttk.Frame(self.mainFrame, padding="3 3 12 12")
         eventFrame.grid(column=0, row=8, sticky=(N, W, E, S))
         eventFrame.columnconfigure(0, weight=1)
         eventFrame.rowconfigure(0, weight=1)
@@ -134,7 +153,7 @@ class Application(tk.Frame):
         del parameters
 
         # Station parameter frame
-        stationFrame = ttk.Frame(self.mainFrame, padding="3 3 12 12", relief=RAISED)
+        stationFrame = ttk.Frame(self.mainFrame, padding="3 3 12 12")
         stationFrame.grid(column=2, row=8, sticky=(N, W, E, S))
         stationFrame.columnconfigure(0, weight=1)
         stationFrame.rowconfigure(0, weight=1)
@@ -154,7 +173,7 @@ class Application(tk.Frame):
         del xtmp            
 
         # Travel time frame
-        travelFrame = ttk.Frame(self.mainFrame, padding="3 3 12 12", relief=RAISED)
+        travelFrame = ttk.Frame(self.mainFrame, padding="3 3 12 12")
         travelFrame.grid(column=4, row=8, sticky=(N, W, E, S))
         travelFrame.columnconfigure(0, weight=1)
         travelFrame.rowconfigure(0, weight=1)
@@ -174,7 +193,7 @@ class Application(tk.Frame):
             Checkbutton(travelFrame, text=self.phases[i], variable=self.vPhases[i]).pack(anchor=W)     
         
         # Turning points frame
-        turnFrame = ttk.Frame(self.mainFrame, padding="3 3 12 12", relief=RAISED)
+        turnFrame = ttk.Frame(self.mainFrame, padding="3 3 12 12")
         turnFrame.grid(column=6, row=8, sticky=(N, W, E, S))
         turnFrame.columnconfigure(0, weight=1)
         turnFrame.rowconfigure(0, weight=1)
@@ -192,12 +211,6 @@ class Application(tk.Frame):
         for i in range(len(self.phases2)):
             self.vPhases2[i] = BooleanVar()
             Checkbutton(turnFrame, text=self.phases2[i], variable=self.vPhases2[i]).pack(anchor=W)     
-
-        # Plotting frame
-        plotFrame = ttk.Frame(self.mainFrame, padding="3 3 12 12", relief=RAISED)
-        plotFrame.grid(column=8, row=8, sticky=(N, W, E, S))
-        plotFrame.columnconfigure(0, weight=1)
-        plotFrame.rowconfigure(0, weight=1)
 
     def download(self):
         # Get event parameters
@@ -286,38 +299,18 @@ class Application(tk.Frame):
 
         addEventCMT(n)
 
+    def makeStations(self):
+        # Get event name
+        n = str(self.name.get())
+
+        makeStationList(n)
+
     def instructions(self):
         toplevel = Toplevel()
         label1 = Label(toplevel, text=self.ABOUT_TEXT, height=0, width=100)
         label1.pack(anchor=W)
         label2 = Label(toplevel, text=self.DISCLAIMER, height=0, width=100)
         label2.pack()
-
-#####################################################################################
-### Plotter section
-#####################################################################################
-
-### Want to extend this section to give better choices: amplitude, distance divisions
-### for azimuth plotter etc
-
-#    def plotter(self):
-#        # Get event name
-#        n = str(name.get())
- #       if (plotType.get() == 1):
- #           plotWithAzimuth(n, syn)
- #       elif (plotType.get() == 2):
- #           plotWithDistance(n, syn)
-
-#plotType = IntVar()
-#syn = IntVar()
-#Radiobutton(mainframe, text="Azimuth", variable=plotType, value=1).grid(column=4, row=17, columnspan=2, sticky=W)
-#Radiobutton(mainframe, text="Distance", variable=plotType, value=2).grid(column=4, row=18, columnspan=2, sticky=W)
-#Radiobutton(mainframe, text="Yes", variable=syn, value=1)
-#Radiobutton(mainframe, text="No", variable=syn, value=2)
-
-#ttk.Button(mainframe, text="Plot", command=plotter).grid(column=5, row=18, columnspan=2, sticky=W)
-
-#####################################################################################
         
 root = tk.Tk()
 root.title("Part III Project - Data Retrieval Interface")

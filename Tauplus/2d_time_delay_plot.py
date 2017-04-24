@@ -27,10 +27,10 @@ distance = 90.
 
 # Anomalous layer
 #top_r_arr = np.arange(2886.0, 2850.0, -1)
-top_r_arr = np.arange(2856.0, 2886.0, 0.5)
+top_r_arr = np.arange(2856.0, 2886.5, 0.5)
 bot_r = 2891.0
 #dv_s_arr = np.arange(-0.1, -0.26, -0.01)
-dv_s_arr = np.arange(-0.24, -0.16, 0.01)
+dv_s_arr = np.arange(-0.24, -0.14, 0.002)
 dv_p = -0.1
 drho = 0.1
 
