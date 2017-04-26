@@ -64,19 +64,19 @@ for s in range(len(seislist)):
 
     plt.xlim([-20, 60])
 
-    iInd = np.searchsorted(times, -20)
-    fInd = np.searchsorted(times, 60)
-    print(iInd, fInd, times[iInd], times[fInd])
+    #iInd = np.searchsorted(times, -20)
+    #fInd = np.searchsorted(times, 60)
+    #print(iInd, fInd, times[iInd], times[fInd])
 
-    windowSeis = []
-    windowTime = []
-    for i in range(iInd, fInd):
-        windowSeis.append(seistoplot[i])
-        windowTime.append(times[i])
+    #windowSeis = []
+    #windowTime = []
+    #for i in range(iInd, fInd):
+    #    windowSeis.append(seistoplot[i])
+    #    windowTime.append(times[i])
 
-    analytical_signal = hilbert(windowSeis)
-    amplitude_envelope = np.abs(analytical_signal)
-    plt.plot(windowTime, amplitude_envelope + np.round(seis[0].stats['az']))
+    #analytical_signal = hilbert(windowSeis)
+    #amplitude_envelope = np.abs(analytical_signal)
+    #plt.plot(windowTime, amplitude_envelope + np.round(seis[0].stats['az']))
     
 # Put labels on graphs
 initDist = 85
@@ -90,6 +90,6 @@ for i in range(4):
     plt.tick_params(axis='both', which='major', labelsize=6)
 
 # Save file and show plot
-plt.savefig('Plots/' + event + '/' + 'csem_with_azimuth.pdf')
+plt.savefig('Plots/' + event + '/' + 'csem_azimuth.pdf')
 
 plt.show()

@@ -10,6 +10,13 @@ import obspy.taup
 from collections import OrderedDict
 import phases
 import csv
+import emailer
+import sys
+
+# Set email to send notification to.
+email = "conor.bacon@gmail.com"
+
+name = sys.argv[1]
 
 # Phases to plot, e.g. plotphase = ["S", "ScS"]
 plotphase = ["S", "ScS"]
@@ -20,17 +27,21 @@ depth_earthquake = 414.89
 # Defines array of distances to compute ray path at
 # format: np.arange(start, stop, stepsize)
 # e.g. np.arange(0,4,1)=[0,1,2,3]
-dist_raypaths = 90.
+dist_raypaths = 87.
 print(dist_raypaths)
 # Defines array of distances to compute traveltime at
-distance = 90.
+distance = 87.
+
+height = 35
+maxdv = -0.24
+mindv = -0.14
+heightStep = 0.5
+dvStep = 0.002
 
 # Anomalous layer
-#top_r_arr = np.arange(2886.0, 2850.0, -1)
-top_r_arr = np.arange(2856.0, 2886.5, 0.5)
+top_r_arr = np.arange((2890.5 - height), 2886.0, heightStep)
 bot_r = 2891.0
-#dv_s_arr = np.arange(-0.1, -0.26, -0.01)
-dv_s_arr = np.arange(-0.24, -0.14, 0.002)
+dv_s_arr = np.arange(maxdv, mindv, dvStep)
 dv_p = -0.1
 drho = 0.1
 
@@ -53,7 +64,7 @@ for i in range(len(top_r_arr)):
         model = obspy.taup.taup_create.TauPCreate(input_filename='prem.nd', output_filename='./prem/prem.npz')
         model.load_velocity_model()
         model.run()
-        model.output_filename = './prem/prem_mod_' + str(i) + '_' + str(j) + '.npz'
+        model.output_filename = './prem/' + name + '_' + str(int(distance)) + '_prem_mod_' + str(i) + '_' + str(j) + '.npz'
 
         depth = []
         vs = []
@@ -73,7 +84,7 @@ for i in range(len(top_r_arr)):
                 layer[3] = (1. + dv_p) * layer[3]
                 layer[5] = (1. + dv_s) * layer[5]
                 layer[7] = (1. + drho) * layer[7]
-
+                
             if layer[1] >= top_r and set_toplayer == True:
                 layertmp = layer.copy()
                 layertmp[1] = top_r
@@ -119,7 +130,7 @@ for i in range(len(top_r_arr)):
 
         # Plot for modified PREM
         
-        model = TauPyModel(model='./prem/prem_mod_' + str(i) + '_' + str(j) + '.npz')
+        model = TauPyModel(model='./prem/' + name + '_' + str(int(distance)) + '_prem_mod_' + str(i) + '_' + str(j) + '.npz')
                 
         print('Computing travel time of S')
         arrivals_S = model.get_travel_times(depth_earthquake, distance, phase_list=[plotphase[0]])
@@ -141,28 +152,22 @@ for i in range(len(top_r_arr)):
         del arrivals_S
         del arrivals_ScS
 
-fig = plt.figure(figsize=(6,4))
-ax = fig.add_subplot(111)
-ax.set_title('colorMap')
-cax = ax.matshow(dt_arr)
-fig.colorbar(cax)
-
-# Convert array values into strings
-top_r_arr = [str(x) for x in top_r_arr]
-dv_s_arr = [str(x) for x in dv_s_arr]
-
-ax.set_xticklabels([''] + dv_s_arr)
-ax.set_yticklabels([''] + top_r_arr)
-
-plt.show()
-
-print(dt_arr)
-
 dir = '../Data/PeakData/'
 
-with open(dir + '20170224_2d_dt.csv', 'w') as csvfile:
+with open(dir + name + '_' + str(int(distance)) + '_2d_dt.csv', 'w') as csvfile:
     writer = csv.writer(csvfile)
     [writer.writerow(r) for r in dt_arr]
-        
-#plt.savefig('example.png')
-#plt.savefig('example.pdf')
+
+message = """Your code has finished computing the traveltime grid for:
+    Depth Range: 5 - %s km
+    (Steps: %s km)
+    
+    Velocity reduction: %s - %s %%
+    (Steps: %s %%)
+    
+    Distance: %s degrees
+    """ % (str(height), str(heightStep), str(maxdv * 100), str(mindv * 100), str(dvStep * 100), str(distance))
+    
+emailer.sendEmail(email, message)
+    
+plt.show()

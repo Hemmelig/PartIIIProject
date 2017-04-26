@@ -15,19 +15,18 @@ import numpy as np
 
 #####################################################################################
 
-def downloadData(name, latitude, longitude, st, et, maxrad, minmag, maxmag, distmin, distmax, azmin, azmax, lengthoftrace):
+def downloadData(name, lat, lon, st, et, maxrad, minmag, maxmag, distmin, distmax, azmin, azmax, lengthoftrace):
     # Load IRIS client
     irisclient = IRISClient("IRIS")
 
     # Just to ensure it is functioning
-    print(name, latitude, longitude, st, et, maxrad, minmag, maxmag, distmin, distmax, azmin, azmax, lengthoftrace)
+    print(name, lat, lon, st, et, maxrad, minmag, maxmag, distmin, distmax, azmin, azmax, lengthoftrace)
     
     # Convert time arguments
     starttime = UTCDateTime(st)
     endtime = UTCDateTime(et)
 
     # Define a filter band to prevent amplifying noise during the deconvolution
-    # Currently not in use, as responses are not being removed
     fl1 = 0.005
     fl2 = 0.01
     fl3 = .5
@@ -60,7 +59,7 @@ def downloadData(name, latitude, longitude, st, et, maxrad, minmag, maxmag, dist
         os.makedirs(dir2)
    
     # Get event catalogue via IRIS client and save event parameters
-    cat = irisclient.get_events(latitude=latitude, longitude=longitude, maxradius=maxrad, starttime=starttime, endtime=endtime, minmagnitude=minmag)
+    cat = irisclient.get_events(latitude=lat, longitude=lon, maxradius=maxrad, starttime=starttime, endtime=endtime, minmagnitude=minmag)
     evtlatitude = cat[0].origins[0]['latitude']
     evtlongitude = cat[0].origins[0]['longitude']
     evtdepth = cat[0].origins[0]['depth'] / 1.e3 # Convert to km from m
@@ -120,11 +119,11 @@ def downloadData(name, latitude, longitude, st, et, maxrad, minmag, maxmag, dist
                     seis[0].stats['network'] = nw.code
 			
                     filename = dir + '/' + seis[0].stats.station + '.' + seis[0].stats.network + '.PICKLE'
-                    print('Writing to ' , filename)
-                    count = count + 1
+                    print('Writing to ', filename)
+                    count += 1
                     seis.write(filename, format='PICKLE')
                 except:
-                    print('Response removal or saving failed for, ' + nw.code + ' ' + sta.code)
+                    print('Response removal or saving failed for, ', nw.code, ' ', sta.code)
         
-    print('Seismograms found for ' + str(count) + ' stations')
+    print('Seismograms found for ', str(count), ' stations')
             

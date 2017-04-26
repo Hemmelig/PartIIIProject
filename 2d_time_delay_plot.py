@@ -7,7 +7,7 @@ import csv
 name = sys.argv[1]
 
 # Defines array of distances to compute traveltime at
-distance = 90.
+distance = sys.argv[2]
 
 # Anomalous layer
 top_r_arr = np.arange(2856.0, 2886.5, 0.5)
@@ -15,7 +15,7 @@ dv_s_arr = np.arange(-0.24, -0.14, 0.002)
 
 dir = 'Data/PeakData/' + name
 
-with open(dir + '_2d_dt.csv', 'r') as csvfile:
+with open(dir + '_' + str(int(distance)) + '_2d_dt.csv', 'r') as csvfile:
     reader = csv.reader(csvfile)
     dt_arr = [[float(e) for e in r] for r in reader]
 
@@ -37,5 +37,5 @@ ax.set_yticklabels([''] + top_r_arr)
 
 plt.show()
         
-fig.savefig('Plots/' + name + '/2d_dt_plot.png')
-fig.savefig('Plots/' + name + '/2d_dt_plot.pdf')
+fig.savefig('Plots/' + name + '/2d_dt_plot_' + str(int(distance)) + '.png')
+fig.savefig('Plots/' + name + '/2d_dt_plot_' + str(int(distance)) + '.pdf')

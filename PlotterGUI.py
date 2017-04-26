@@ -74,44 +74,37 @@ class Application(tk.Frame):
         ttk.Entry(master=optionFrame, textvariable=self.freqMin).pack(anchor=W)
 
         # Control buttons for plots     
-        ttk.Button(master=optionFrame, text="Data: Distance", command=lambda i=1: self.plot(i,canvas,ax)).pack(anchor=W)
-        ttk.Button(master=optionFrame, text="Data: Azimuth", command=lambda i=2: self.plot(i,canvas,ax)).pack(anchor=W)
-        ttk.Button(master=optionFrame, text="CSEM: Azimuth", command=lambda i=3: self.plot(i,canvas,ax)).pack(anchor=W)        
-        ttk.Button(master=optionFrame, text="Map: Turning Points", command=lambda i=4: self.plot(i,canvas,ax)).pack(anchor=W)        
-        ttk.Button(master=optionFrame, text="Map: Delay Times", command=lambda i=5: self.plot(i,canvas,ax)).pack(anchor=W)        
-        ttk.Button(master=optionFrame, text="2D Delay Time Array", command=lambda i=6: self.plot(i,canvas,ax)).pack(anchor=W)
+        ttk.Button(master=optionFrame, text="Data: Distance", command=lambda i=1: self.plot(i)).pack(anchor=W)
+        ttk.Button(master=optionFrame, text="Data: Azimuth", command=lambda i=2: self.plot(i)).pack(anchor=W)
+        ttk.Button(master=optionFrame, text="CSEM: Azimuth", command=lambda i=3: self.plot(i)).pack(anchor=W)        
+        ttk.Button(master=optionFrame, text="Map: Turning Points", command=lambda i=4: self.plot(i)).pack(anchor=W)        
+        ttk.Button(master=optionFrame, text="Map: Delay Times", command=lambda i=5: self.plot(i)).pack(anchor=W)        
+        ttk.Button(master=optionFrame, text="2D Delay Time Array", command=lambda i=6: self.plot(i)).pack(anchor=W)
         
         # Add some padding to all widgets in this frame
         for child in optionFrame.winfo_children():
             child.pack_configure(padx=5, pady=5)        
 
-        # Create transverse canvas
-        fig = plt.figure(figsize=(10,5), dpi=100)
-        ax = fig.add_axes([0.1,0.1,0.8,0.8])
-        canvas = FigureCanvasTkAgg(fig, master=root)
-        canvas.get_tk_widget().grid(row=2, column=2, rowspan=6, columnspan=8)
-        canvas.show()
-
         self.update()
 
-    def plot(self, i, canvas, ax):
+    def plot(self, i):
         # Clear current plot
         ax.clear()
         n = str(self.name.get())
         print(i, n)
 
         if (i == 1):
-            plotDataDistance(n, canvas, ax)
+            plotDataDistance(n, self.fmin, self.fmax)
         elif (i == 2):
-            plotDataAzimuth(n, canvas, ax)
+            plotDataAzimuth(n, self.fmin, self.fmax)
         elif (i == 3):
-            plotCSEMAzimuth(n, canvas, ax)
+            plotCSEMAzimuth(n, self.fmin, self.fmax)
         elif (i == 4):
-            plotMapTurn(n, canvas, ax)
+            plotMapTurn(n, self.fmin, self.fmax)
         elif (i == 5):
-            plotMapDelay(n, canvas, ax)
+            plotMapDelay(n, self.fmin, self.fmax)
         elif (i == 6):
-            plot2Ddt(n, canvas, ax)
+            plot2Ddt(n, self.fmin, self.fmax)
         
         canvas.draw()
 

@@ -26,6 +26,7 @@ midlon = 192.5
 
 dir = 'Data/' + name + '/'
 seislist = glob.glob(dir + '/*PICKLE')
+print(len(seislist))
 
 # Read in data from textfile
 f = open(dir + 'peakData.txt', 'r')
@@ -68,7 +69,7 @@ m.drawcoastlines()
 # Loop through stations
 plot_event = True
 for s in range(len(seislist)):
-    print(s, seislist[s])
+    print(s + 1, seislist[s])
     seis = read(seislist[s], format='PICKLE')
 
     # Get event-station pair delay time and amplitude ratio
@@ -105,7 +106,7 @@ for s in range(len(seislist)):
         ys.append(y3)
         dtdt.append(delayTime - dtPred)
 
-plot = m.scatter(xs, ys, s=35, c=dtdt, vmin=11, vmax=20, marker='o', alpha=1, cmap=cm)
+plot = m.scatter(xs, ys, s=35, c=dtdt, vmin=10, vmax=16, marker='o', alpha=1, cmap=cm)
 
 plt.colorbar(plot)
 
