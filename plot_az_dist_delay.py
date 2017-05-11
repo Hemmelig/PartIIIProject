@@ -21,6 +21,9 @@ amplRatios = []
 azis = []
 dists = []
 dtdt = []
+bounceLats = []
+bounceLons = []
+pCorrection = 29.13 / 4.
 
 # Read in data from textfile
 with open(dir + 'peakData.txt') as f:
@@ -36,51 +39,57 @@ for s in range(len(seislist)):
     print(s + 1, len(seislist))
     seis = read(seislist[s], format='PICKLE')
 
+    turnloc = seis[0].stats.turnpoints["ScS"]
+    bounceLats.append(turnloc[1])
+    bounceLons.append(turnloc[2] + 360.)
+
     dtPred = seis[0].stats.traveltimes["ScS"] - seis[0].stats.traveltimes["S"]
     if (delayTimes[s] != 0):
-        dtdt.append(delayTimes[s] - dtPred)
+        dtdt.append(delayTimes[s] - dtPred - pCorrection)
     else:
         dtdt.append(0)
 
-# Make plot
-#plot = plt.scatter(azis, dists, s=35, c=dtdt, vmin=10, vmax=16, alpha=1, cmap=cm)
+lons = np.arange(184, 204, 2)
+lats = np.arange(8, 28, 2)
+binAv = np.zeros((len(lons), len(lats)))
+binAv.fill(-1)
 
-#plt.colorbar(plot)
-
-ds = np.arange(80, 101, 1)
-azs = np.arange(5, 26, 1)
-binAv = np.zeros((len(ds), len(azs)))
-print(ds, azs)
-
-for i in range(len(ds)):
-    d = ds[i]
-    for j in range(len(azs)):
-        a = azs[j]
+for i in range(len(lons)):
+    lon = lons[i]
+    for j in range(len(lats)):
+        lat = lats[j]
         for k in range(len(delayTimes)):
             avtmp = []
-            if (azis[k] >= a and azis[k] <= a + 1 and dists[k] >= d and dists[k] <= d + 1):
+            if (bounceLats[k] >= lat and bounceLats[k] <= lat + 2 and bounceLons[k] >= lon and bounceLons[k] <= lon + 2):
                 avtmp.append(dtdt[k])
             if (len(avtmp) > 0):
-                binAv[i][j] = np.mean(avtmp)
+                binAv[j][i] = np.mean(avtmp)
 
 # Colour palette to use for plotting
 cm = plt.get_cmap('gist_rainbow')
 
+#print(binAv)
+
+LATS, LONS = np.meshgrid(lats, lons)
+
 fig = plt.figure(figsize=(6,4))
 ax = fig.add_subplot(111)
-ax.set_title('Delay time as a function of distance and azimuth')
-cax = ax.matshow(binAv, vmin=6, vmax=16)
+ax.set_title('Delay time map ' + name)
+binAv[np.isnan(binAv)] = -1
+binAv = np.ma.array(binAv, mask=binAv == -1)
+plt.gca().patch.set_color('.25')
+cax = plt.contourf(binAv)
+#cax = plt.contourf(LONS, LATS, binAv)
+circle = plt.Circle((192.5, 17.5), 7.5, color="white", linewidth=2, fill=False)
+plt.gca().add_artist(circle)
+#cax = ax.matshow(binAv, vmin=2, vmax=8)
 fig.colorbar(cax)
-#circle = plt.Circle()
-#ax.add_artist(circle)
 
 # Convert array values into strings
-ds = [str(x) for x in ds]
-azs = [str(x) for x in azs]
+los = [str(x) for x in lons]
+las = [str(x) for x in lats]
 
-ax.set_xticklabels([''] + ds)
-ax.set_yticklabels([''] + azs)
-
-#plt.title('Delay time as a function of distance and azimuth')
+ax.set_xticklabels(los)
+ax.set_yticklabels(las)
 
 plt.show()

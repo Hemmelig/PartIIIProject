@@ -47,12 +47,8 @@ class Application(tk.Frame):
     clickCounter = 0
 
     # Initialise storage for clicks
-    delayTimes = []
-    amplRatios = []
-    comments = []
-    azis = []
-    dists = []
-    minMax = []
+    pSs = []
+    pScSs = []
 
     # Filter frequencies
     fmin = 0.
@@ -64,17 +60,19 @@ class Application(tk.Frame):
         self.name = StringVar()
         self.event = StringVar()
         self.eventName = StringVar()
-        self.azimuth = StringVar()
+        self.pScSav = StringVar()
+        self.pSav = StringVar()
+        self.pCount = StringVar()
+        self.stdScS = StringVar()
+        self.stdS = StringVar()
         self.distance = StringVar()
+        self.azimuth = StringVar()
         self.freqBand = IntVar()
         self.freqBand.set(1)
         self.freqMin = DoubleVar()
         self.freqMax = DoubleVar()
         self.dataOrSyn = IntVar()
         self.dataOrSyn.set(1)
-        self.comment = StringVar()
-        self.minOrMax = IntVar()
-        self.minOrMax.set(1)
 
         self.createWidgets()
 
@@ -118,20 +116,31 @@ class Application(tk.Frame):
 
         ttk.Button(master=optionFrame, text="Update", command=lambda: self.updateFreqBand(canvas, ax)).pack(anchor=W)
 
-        # Create min or max button
-        Radiobutton(master=optionFrame, text="Min.", variable=self.minOrMax, value=1).pack(anchor=W)
-        Radiobutton(master=optionFrame, text="Max.", variable=self.minOrMax, value=2).pack(anchor=W)
-
         # Create labels for distance and azimuth
         ttk.Label(master=optionFrame, text="Azimuth").pack(anchor=W)
         ttk.Label(master=optionFrame, textvariable=self.azimuth).pack(anchor=W)
         ttk.Label(master=optionFrame, text="Distance").pack(anchor=W)
         ttk.Label(master=optionFrame, textvariable=self.distance).pack(anchor=W)
 
-        # Create box to add a comment to a seismogram
-        ttk.Label(master=optionFrame, text="Comment").pack(anchor=W)
-        self.commentEntry = ScrolledText(master=optionFrame, width=20, height=10)
-        self.commentEntry.pack(anchor=W)
+        # Create label for current period average
+        ttk.Label(master=optionFrame, text="Samples").pack(anchor=W)
+        ttk.Label(master=optionFrame, textvariable=self.pCount).pack(anchor=W)
+        
+        # Create label for current period average
+        ttk.Label(master=optionFrame, text="ScS period").pack(anchor=W)
+        ttk.Label(master=optionFrame, textvariable=self.pScSav).pack(anchor=W)
+
+        # Create label for current period average
+        ttk.Label(master=optionFrame, text="ScS std").pack(anchor=W)
+        ttk.Label(master=optionFrame, textvariable=self.stdScS).pack(anchor=W)
+        
+        # Create label for current period average
+        ttk.Label(master=optionFrame, text="S period").pack(anchor=W)
+        ttk.Label(master=optionFrame, textvariable=self.pSav).pack(anchor=W)
+
+        # Create label for current period average
+        ttk.Label(master=optionFrame, text="S std").pack(anchor=W)
+        ttk.Label(master=optionFrame, textvariable=self.stdS).pack(anchor=W) 
 
         # Add some padding to all widgets in this frame
         for child in optionFrame.winfo_children():
@@ -143,13 +152,6 @@ class Application(tk.Frame):
         canvas = FigureCanvasTkAgg(fig, master=root)
         canvas.get_tk_widget().grid(row=2, column=2, rowspan=6, columnspan=8)
         canvas.show()
-        
-        # Create synthetics canvas
-        #fig2 = plt.figure(figsize=(15,5), dpi=100)
-        #ax2 = fig.add_axes([0.1,0.1,0.8,0.8])
-        #canvas2 = FigureCanvasTkAgg(fig, master=root)
-        #canvas2.get_tk_widget().grid(row=8, column=2, rowspan=6, columnspan=8)
-        #canvas2.show()
         
         self.update()
         
@@ -190,6 +192,11 @@ class Application(tk.Frame):
     def distAzUpdate(self):
         self.azimuth.set(str(round(self.az, 3)))
         self.distance.set(str(round(self.dist, 3)))
+        self.pScSav.set(str(2 * np.mean(self.pScSs)))
+        self.pSav.set(str(2 * np.mean(self.pSs)))
+        self.pCount.set(str(len(self.pScSs)))
+        self.stdS.set(str(2 * np.std(self.pSs)))
+        self.stdScS.set(str(2 * np.std(self.pScSs)))
         
     def resetCounter(self):
         self.s = 0
@@ -200,44 +207,17 @@ class Application(tk.Frame):
         self.s += 1
         
         if ((self.s) == len(self.seislist)):
-            if (self.clickCounter == 0):
-                self.delayTimes.append(0)
-                self.amplRatios.append(0)
-                self.minMax.append(0)
-            self.comment = self.commentEntry.get('1.0', END+'-1c')
-            self.comments.append(str(self.comment))
-            self.azis.append(self.az)
-            self.dists.append(self.dist)
+            print('Mean S period: ' + str((2 * np.mean(self.pSs))))
+            print('Standard deviation: ' + str(np.std(self.pSs)))
+            print('Mean ScS period: ' +  str((2 * np.mean(self.pScSs))))
+            print('Standard deviation: ' + str(np.std(self.pScSs)))
             print('Last seismogram')
-            print(self.comments)
-            self.writeFile()
         else:
-            if (self.clickCounter == 0):
-                self.delayTimes.append(0)
-                self.amplRatios.append(0)
-                self.minMax.append(0)
-            print(self.s, len(self.seislist))
-            self.comment = self.commentEntry.get('1.0', END+'-1c')
-            self.comments.append(str(self.comment))
-            self.commentEntry.delete('1.0', END)
-            self.azis.append(self.az)
-            self.dists.append(self.dist)
+            print(self.s + 1, len(self.seislist))
             self.clickCounter = 0
             self.counterUpdate()
             self.updateFreqBand(canvas, ax)
             self.distAzUpdate()
-
-    def writeFile(self):
-        if (self.dataOrSyn.get() == 1):
-            peakData = open(self.dir + 'peakData.txt', 'w')
-            for i in range(len(self.delayTimes)):
-                peakData.write("%s:%s:%s:%s:%s \n" % (self.delayTimes[i], self.amplRatios[i], self.azis[i], self.dists[i], self.comments[i]))
-            peakData.close()
-        if (self.dataOrSyn.get() == 2):
-            peakData = open(self.dir + '/Synthetics/peakData.txt', 'w')
-            for i in range(len(self.delayTimes)):
-                peakData.write("%s:%s:%s:%s:%s:%s \n" % (self.delayTimes[i], self.amplRatios[i], self.azis[i], self.dists[i], self.minMax[i], self.comments[i]))
-            peakData.close()
 
     def plot(self, canvas, ax):
         # Clear current plot
@@ -264,16 +244,12 @@ class Application(tk.Frame):
 
         # Plotting data. Both components normalised by max amplitude on transverse component
         ax.plot(self.seisT.times() + self.tshift, self.seisT.data / np.max(abs(self.seisT.data)), 'k', linewidth=2)
-        ax.fill_between(self.seisT.times() + self.tshift, 0, self.seisT.data / np.max(abs(self.seisT.data)), where=self.seisT.data / np.max(abs(self.seisT.data)) > 0, facecolor='r')
-        ax.fill_between(self.seisT.times() + self.tshift, 0, self.seisT.data / np.max(abs(self.seisT.data)), where=0 > self.seisT.data / np.max(abs(self.seisT.data)), facecolor='b')         
 
         # Plotting travel time predictions
         for k in seis[0].stats.traveltimes.keys():
             if seis[0].stats.traveltimes[k] != None:
                 ax.plot(seis[0].stats.traveltimes[k], 0.0, 'g', marker='o', markersize=4)
                 ax.text(seis[0].stats.traveltimes[k], -0.2, k, fontsize=8)
-
-        self.deltaT = seis[0].stats.traveltimes["ScS"] - seis[0].stats.traveltimes["S"]
 
         ax.set_ylim([-1.0, 1.0])
         ax.set_xlim([seis[0].stats.traveltimes[phase] - 50, seis[0].stats.traveltimes[phase] + 100])
@@ -322,9 +298,7 @@ class Application(tk.Frame):
         self.seistoplot = [x / norm for x in self.seistoplot]
             
         ax.plot(self.times, self.seistoplot, 'k', linewidth=2) 
-        #ax.fill_between(self.times, 0, self.seistoplot, where=self.seistoplot > 0, facecolor='r')
-        #ax.fill_between(self.times, 0, self.seistoplot, where=0 > self.seistoplot, facecolor='b')
-        
+
         ax.set_ylim([-1.0, 1.0])
         ax.set_xlim([430., 510.])
 
@@ -345,19 +319,21 @@ class Application(tk.Frame):
         if (self.dataOrSyn.get() == 2):
             xArr = self.times
             array = self.seistoplot
+        print(click.xdata)
             
         if (self.clickCounter == 1):
             idxtmp = (np.abs(xArr - click.xdata)).argmin()
-            self.idx1 = self.findMax(array, idxtmp)
+            self.idx1 = self.findMin(array, idxtmp)
         elif (self.clickCounter == 2):
             idxtmp = (np.abs(xArr - click.xdata)).argmin()
-            if (self.minOrMax.get() == 1):
-                self.idx2 = self.findMin(array, idxtmp)
-                self.minMax.append(0)
-            if (self.minOrMax.get() == 2):
-                self.idx2 = self.findMax(array, idxtmp)
-                self.minMax.append(1)
-            self.calcValues(xArr, self.idx1, self.idx2)
+            self.idx2 = self.findMax(array, idxtmp)
+        elif (self.clickCounter == 3):
+            idxtmp = (np.abs(xArr - click.xdata)).argmin()
+            self.idx3 = self.findMin(array, idxtmp)
+        elif (self.clickCounter == 4):
+            idxtmp = (np.abs(xArr - click.xdata)).argmin()
+            self.idx4 = self.findMax(array, idxtmp)
+            self.calcValues(xArr, self.idx1, self.idx2, self.idx3, self.idx4)
             
     def findMax(self, array, idxtmp):
         while (np.abs(array[idxtmp]) < np.abs(array[idxtmp + 1])):
@@ -374,15 +350,12 @@ class Application(tk.Frame):
         return idxtmp                      
 
     # Function that calculates the dt and the amplitude ratio given 2 indices
-    def calcValues(self, xArr, idx1, idx2):
-        delayTime = xArr[idx2] - xArr[idx1]
-        if (self.dataOrSyn.get() == 1):
-            amplRatio = self.seisT.data[idx1] / self.seisT.data[idx2]
-        if (self.dataOrSyn.get() == 2):
-            amplRatio = self.seistoplot[idx1] / self.seistoplot[idx2]
-        print(delayTime, self.deltaT)
-        self.delayTimes.append(delayTime - self.deltaT)
-        self.amplRatios.append(amplRatio)
+    def calcValues(self, xArr, idx1, idx2, idx3, idx4):
+        pS = xArr[idx2] - xArr[idx1]
+        pScS = xArr[idx4] - xArr[idx3]
+
+        self.pSs.append(pS)
+        self.pScSs.append(pScS)
         
     def instructions(self):
         toplevel = Toplevel()
@@ -392,6 +365,6 @@ class Application(tk.Frame):
         label2.pack()
 
 root = tk.Tk()
-root.title("Part III Project - Parameter Calculator")
+root.title("Part III Project - Period Calculator")
 app = Application(master=root)
 app.mainloop()

@@ -40,7 +40,7 @@ dist_traveltimes = np.arange(70,100.1,1)
 
 
 ### Anomalous layer
-top_r = 2871.0
+top_r = 2861.0
 bot_r = 2891.0
 dv_s = -0.2
 dv_p = -0.1
@@ -151,6 +151,7 @@ for ph, phase in enumerate(plotphase):
         # Plot arrival times
         plt.subplot(1,3,2)
         for ind, arr in enumerate(arrivals):
+            print(arr.time)
             plt.plot(distance, arr.time,'.',color =cm(ph/float(len(plotphase))), marker ='^', label=phase +'_prem')
         plt.subplot(1,3,3)
         for ind, arr in enumerate(arrivals):
@@ -165,8 +166,6 @@ for ph, phase in enumerate(plotphase):
 
 model = TauPyModel(model='./prem_mod.npz')
 
-
-
 # Loop through phases
 for ph, phase in enumerate(plotphase):
     # Loop through distances
@@ -178,12 +177,13 @@ for ph, phase in enumerate(plotphase):
         # Plot arrival times
         plt.subplot(1,3,2)
         for ind, arr in enumerate(arrivals):
-                plt.plot(distance, arr.time,'.',color =cm(ph/float(len(plotphase))), marker ='o',label=phase + '_mod')
+            print(arr.time)
+            plt.plot(distance, arr.time,'.',color =cm(ph/float(len(plotphase))), marker ='o',label=phase + '_mod')
         plt.subplot(1,3,3)
         for ind, arr in enumerate(arrivals):
-            print(arr.time)
             plt.plot(distance, arr.ray_param,'.',color =cm(ph/float(len(plotphase))),marker ='o', label=phase + '_mod')
 
+            
 plt.subplot(1,3,2)
 # Annotate travel time figure
 plt.xlabel('distance (dg)')

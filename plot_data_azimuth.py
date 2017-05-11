@@ -17,6 +17,16 @@ while (synthetics != 'y' and synthetics != 'n'):
 
 switch_yaxis = False
 
+def findAlign(timeArray, seisArray):
+    iInd = np.searchsorted(timeArray, -20)
+    fInd = np.searchsorted(timeArray, 60)
+    windowSeis = []
+    for i in range(iInd, fInd):
+        windowSeis.append(seisArray[i])
+
+    maxInd = np.argmax(windowSeis) + iInd
+    return maxInd
+
 # Frequencies for filter in Hz
 fmin = 0.033
 fmax = 0.1
@@ -26,6 +36,8 @@ seislist = glob.glob(dir + '/*PICKLE')
 
 norm = None
 azis = []
+
+azbox = [84, 88, 92, 96]
 
 # Loop through seismograms
 for s in range(len(seislist)):
@@ -45,13 +57,13 @@ for s in range(len(seislist)):
 
     # Split seismograms by distance range
     phase = 'S'
-    if seis[0].stats['dist'] < 85:
+    if seis[0].stats['dist'] < azbox[0]:
         plt.subplot(1,4,1)
-    elif seis[0].stats['dist'] < 90:
+    elif seis[0].stats['dist'] < azbox[1]:
         plt.subplot(1,4,2)
-    elif seis[0].stats['dist'] < 95:
+    elif seis[0].stats['dist'] < azbox[2]:
         plt.subplot(1,4,3)
-    elif seis[0].stats['dist'] < 100:
+    elif seis[0].stats['dist'] < azbox[3]:
         plt.subplot(1,4,4)
     
     # Normalise data and shift data up by azimuth
@@ -75,8 +87,19 @@ for s in range(len(seislist)):
         except:
             print('No synthetics available')
 
+    alignInd = findAlign(seistoplot.times, seistoplot.data)
+
+    talign = seistoplot.times[alignInd]
+
+    seistoplot.times = [x - talign for x in seistoplot.times]
+    
     # Plot data and synthetics if required
     plt.plot(seistoplot.times, seistoplot.data, 'k', linewidth=1)
+
+    # Uncomment these lines to colour positive red, negative blue
+    #plt.fill_between(seistoplot.times, np.round(seis[0].stats['az']), seistoplot.data, where=seistoplot.data > np.round(seis[0].stats['az']), facecolor='r')
+    #plt.fill_between(seistoplot.times, np.round(seis[0].stats['az']), seistoplot.data, where=np.round(seis[0].stats['az']) > seistoplot.data, facecolor='b')
+                                                
     if syn:
         try:
             plt.plot(seissyn.times, seissyn.data, 'b', linewidth=1)
@@ -98,14 +121,13 @@ for s in range(len(seislist)):
     del seis
             
 # Put labels on graphs
-initDist = 85
 for i in range(4):   
     plt.subplot(1,4,i+1)
-    plt.title('S dist < %d' % (initDist + (5 * i)), fontsize=10)
+    plt.title('S dist < %d' % (azbox[i]), fontsize=10)
     if (i == 0):
         plt.ylabel('Azimuth (dg)')
     plt.ylim(round(min(azis) - 1), round(max(azis) + 1))        
-    plt.xlim([-20, 50])           
+    plt.xlim([-20, 100])           
     plt.xlabel('Time around predicted arrival (s)', fontsize=6)
     plt.tick_params(axis='both', which='major', labelsize=6)
     if switch_yaxis:
@@ -117,5 +139,4 @@ if syn ==  True:
 if syn == False:
     plt.savefig('Plots/' + event + '/'  + 'azimuth_noSyn.pdf')
 
-plt.show()     
-
+plt.show()

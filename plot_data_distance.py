@@ -17,6 +17,16 @@ while (synthetics != 'y' and synthetics != 'n'):
 
 switch_yaxis = False
 
+def findAlign(timeArray, seisArray):
+    iInd = np.searchsorted(timeArray, -20)
+    fInd = np.searchsorted(timeArray, 60)
+    windowSeis = []
+    for i in range(iInd, fInd):
+        windowSeis.append(seisArray[i])
+
+    maxInd = np.argmax(windowSeis) + iInd
+    return maxInd
+ 
 # Frequencies for filter
 fmin = 0.033
 fmax = 0.1
@@ -29,6 +39,9 @@ norm = None
 dists = []
 xlim = 0.
 
+fig = plt.figure(figsize=(4,12))
+
+
 # Loop through seismograms
 for s in range(len(seislist)):
     print(s + 1, len(seislist))
@@ -36,7 +49,6 @@ for s in range(len(seislist)):
 
     # List all distances
     dists.append(seis[0].stats['dist'])
-    print(seis[0].stats['az'], seis[0].stats['dist'])
    
     seistoplot = seis.select(channel='BHT')[0]
 
@@ -48,12 +60,8 @@ for s in range(len(seislist)):
         seissyn = seis.select(channel='BXT')[0]
 
     # Plot seismograms
-    print(seis[0].stats.traveltimes['Sdiff'])
-    Phase = ['Sdiff', 'S']
-    for x in range(0,2):      
-        if seis[0].stats.traveltimes[Phase[x]] != None:
-            phase = Phase[x]
-            plt.subplot(1,1,1)
+    phase = 'S'
+    plt.subplot(1,1,1)
 
     # Filter data
     seistoplot.filter('highpass', freq=fmin, corners=2, zerophase=True)
@@ -68,9 +76,17 @@ for s in range(len(seislist)):
     # Time shift to shift data to reference time
     tshift = seis[0].stats['starttime'] - seis[0].stats['eventtime']
 
+    seistoplot.times = [x + tshift - seis[0].stats.traveltimes['S'] for x in seistoplot.times()]
+
+    alignInd = findAlign(seistoplot.times, seistoplot.data)
+
+    talign = seistoplot.times[alignInd]
+
+    seistoplot.times = [x - talign for x in seistoplot.times]
+    
     if norm == None:
         norm = 1. * np.max(abs(seistoplot.data))
-    plt.plot(seistoplot.times() + tshift, seistoplot.data / norm + (seis[0].stats['dist']), 'k')
+    plt.plot(seistoplot.times, seistoplot.data / norm + np.round((seis[0].stats['dist'])), 'k')
 
     if syn:
         plt.plot(seissyn.times(), seissyn.data / norm + (seis[0].stats['dist']), 'b')
@@ -80,21 +96,23 @@ for s in range(len(seislist)):
     #    if seis[0].stats.traveltimes[k] != None:
     #        plt.plot(seis[0].stats.traveltimes[k], np.round(seis[0].stats['dist']), 'g', marker='o', markersize=5)
     #        plt.text(seis[0].stats.traveltimes[k], np.round(seis[0].stats['dist'])-0.5, k, fontsize=6)  
-   
+
 # Put labels on graphs
 plt.subplot(1,1,1)
 plt.title(' ')
 plt.ylabel('Distance (dg)')
 plt.xlabel('Time around predicted arrival (s)')
-plt.xlim([xlim - 100, xlim + 300])
-plt.ylim([79, 98])
+plt.xlim([-15, 50])
+plt.ylim([78, 98])
 if switch_yaxis:
     plt.gca().invert_yaxis()
 
 # Save file and show plot
 if syn ==  True:
-    plt.savefig('Plots/' + event + '/' + 'distance.pdf')
+    plt.savefig('Plots/' + event + '/' + 'distance.pdf', bbox_inches='tight')
+    plt.savefig('Plots/' + event + '/' + 'distance.eps', format='eps', dpi=1000, bbox_inches='tight')
 if syn == False:
-    plt.savefig('Plots/' + event + '/' + 'distance_noSyn.pdf')
+    plt.savefig('Plots/' + event + '/' + 'distance_noSyn.pdf', bbox_inches='tight')
+    plt.savefig('Plots/' + event + '/' + 'distance_noSyn.eps', format='eps', dpi=1000, bbox_inches='tight')
 
 plt.show()

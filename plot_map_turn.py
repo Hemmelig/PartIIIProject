@@ -69,7 +69,7 @@ m.drawcoastlines()
 # Loop through stations
 plot_event = True
 for s in range(len(seislist)):
-   print(s + 1, len(seislist[s]), seislist[s])
+   print(s + 1, len(seislist), seislist[s])
    seis = read(seislist[s], format='PICKLE')
    
    # Plot event star for first station

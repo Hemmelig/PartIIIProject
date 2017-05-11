@@ -39,18 +39,16 @@ for s in range(len(seislist)):
     # Time shift to shift data to reference time
     tshift = seis[0].stats['starttime'] - seis[0].stats['eventtime']
     
-    Phase = ['Sdiff', 'S']
-    for x in range(0, 2):
-        if seis[0].stats.traveltimes[Phase[x]] != None:
-            phase = Phase[x]
-            if seis[0].stats['dist'] < 85:
-                plt.subplot(1,4,1)
-            elif seis[0].stats['dist'] < 90:
-                plt.subplot(1,4,2)
-            elif seis[0].stats['dist'] < 95:
-                plt.subplot(1,4,3)
-            elif seis[0].stats['dist'] < 100:
-                plt.subplot(1,4,4)
+    phase = "S"
+
+    if seis[0].stats['dist'] < 85:
+        plt.subplot(1,4,1)
+    elif seis[0].stats['dist'] < 90:
+        plt.subplot(1,4,2)
+    elif seis[0].stats['dist'] < 95:
+        plt.subplot(1,4,3)
+    elif seis[0].stats['dist'] < 100:
+        plt.subplot(1,4,4)
                 
     crs = open(station_name, "r")
     for columns in (row.strip().split() for row in crs):
@@ -64,19 +62,19 @@ for s in range(len(seislist)):
 
     plt.xlim([-20, 60])
 
-    #iInd = np.searchsorted(times, -20)
-    #fInd = np.searchsorted(times, 60)
-    #print(iInd, fInd, times[iInd], times[fInd])
+    iInd = np.searchsorted(times, -20)
+    fInd = np.searchsorted(times, 60)
+    print(iInd, fInd, times[iInd], times[fInd])
 
-    #windowSeis = []
-    #windowTime = []
-    #for i in range(iInd, fInd):
-    #    windowSeis.append(seistoplot[i])
-    #    windowTime.append(times[i])
+    windowSeis = []
+    windowTime = []
+    for i in range(iInd, fInd):
+        windowSeis.append(seistoplot[i])
+        windowTime.append(times[i])
 
-    #analytical_signal = hilbert(windowSeis)
-    #amplitude_envelope = np.abs(analytical_signal)
-    #plt.plot(windowTime, amplitude_envelope + np.round(seis[0].stats['az']))
+    analytical_signal = hilbert(windowSeis)
+    amplitude_envelope = np.abs(analytical_signal)
+    plt.plot(windowTime, amplitude_envelope + np.round(seis[0].stats['az']))
     
 # Put labels on graphs
 initDist = 85

@@ -17,29 +17,30 @@ import sys
 email = "conor.bacon@gmail.com"
 
 name = sys.argv[1]
+dist = float(sys.argv[2])
 
 # Phases to plot, e.g. plotphase = ["S", "ScS"]
 plotphase = ["S", "ScS"]
 
 # Depth of earthquake in km
-depth_earthquake = 414.89
+depth_earthquake = 606.8
 
 # Defines array of distances to compute ray path at
 # format: np.arange(start, stop, stepsize)
 # e.g. np.arange(0,4,1)=[0,1,2,3]
-dist_raypaths = 87.
+dist_raypaths = dist
 print(dist_raypaths)
 # Defines array of distances to compute traveltime at
-distance = 87.
+distance = dist
 
 height = 35
-maxdv = -0.24
+maxdv = -0.25
 mindv = -0.14
-heightStep = 0.5
-dvStep = 0.002
+heightStep = 2
+dvStep = 0.01
 
 # Anomalous layer
-top_r_arr = np.arange((2890.5 - height), 2886.0, heightStep)
+top_r_arr = np.arange((2891 - height), 2888.0, heightStep)
 bot_r = 2891.0
 dv_s_arr = np.arange(maxdv, mindv, dvStep)
 dv_p = -0.1
@@ -49,6 +50,14 @@ drho = 0.1
 cm = plt.get_cmap('gist_rainbow')
 
 model_name = 'prem'
+
+model = TauPyModel(model='./prem.npz')
+
+print('Computing travel time of ScS')
+arrivals_ScS = model.get_travel_times(depth_earthquake, distance, phase_list=[plotphase[1]])
+for ind, arr in enumerate(arrivals_ScS):
+    ScS_ref = arr.time
+print(ScS_ref)
 
 print(len(top_r_arr), len(dv_s_arr))
 dt_arr = np.zeros((len(top_r_arr), len(dv_s_arr)))
@@ -131,12 +140,6 @@ for i in range(len(top_r_arr)):
         # Plot for modified PREM
         
         model = TauPyModel(model='./prem/' + name + '_' + str(int(distance)) + '_prem_mod_' + str(i) + '_' + str(j) + '.npz')
-                
-        print('Computing travel time of S')
-        arrivals_S = model.get_travel_times(depth_earthquake, distance, phase_list=[plotphase[0]])
-        for ind, arr in enumerate(arrivals_S):
-            S_arr = arr.time
-        print(S_arr)
             
         print('Computing travel time of ScS')
         arrivals_ScS = model.get_travel_times(depth_earthquake, distance, phase_list=[plotphase[1]])
@@ -144,12 +147,11 @@ for i in range(len(top_r_arr)):
             ScS_arr = arr.time
             print(ScS_arr)
 
-        dt = ScS_arr - S_arr
+        dt = ScS_arr - ScS_ref
         dt_arr[i][j] = dt
 
         print(i, j)
 
-        del arrivals_S
         del arrivals_ScS
 
 dir = '../Data/PeakData/'

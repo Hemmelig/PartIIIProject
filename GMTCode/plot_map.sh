@@ -2,7 +2,7 @@
  
 # gmt settings 
  gmtset COLOR_MODEL rgb
- gmtset LABEL_FONT_SIZE 18 LABEL_OFFSET 0.2c ANNOT_FONT Helvetica ANNOT_FONT_SIZE 10 ANNOT_OFFSET 0.05c HEADER_FONT_SIZE 14 HEADER_FONT Helvetica-Bold  HEADER_OFFSET 0.0c
+ gmtset LABEL_FONT_SIZE 14 LABEL_OFFSET 0.2c ANNOT_FONT Helvetica ANNOT_FONT_SIZE 12 ANNOT_OFFSET 0.05c HEADER_FONT_SIZE 18 HEADER_FONT Helvetica-Bold  HEADER_OFFSET 0.0c
  gmtset BASEMAP_TYPE fancy FRAME_PEN 0.75p TICK_LENGTH 0.15c
  
  gmtset OUTPUT_DEGREE_FORMAT +D
@@ -17,7 +17,7 @@ cpt=topo.cpt
 makecpt -Crelief -T-8000/5000/100 -D -Z > $cpt
 #
 cpt_eq=quakes.cpt  
-makecpt -Cseis -T400/650/50 -D -Z > $cpt_eq # make color bar for source depth
+makecpt -Cseis -T200/650/50 -D -Z > $cpt_eq # make color bar for source depth
  
 scale=7i     # size: width
  
@@ -39,9 +39,9 @@ grdimage -R$Rvalue -JM$scale -Ba10f10WSne:."Jan 2016 - Apr 2017": -X0.75i -Y2i -
 inp=./datagcmt.txt
 awk '{print $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13}' $inp | psmeca -R  -J -Sm0.15i/-1 -O -K -W0.2p/0 -T0 -Z$cpt_eq  >> $fig.ps
  
-psscale -C$cpt_eq -D7.5i/2i/-3.5i/0.5 -Ba50g50:"Depth (km)": -O  -K >> $fig.ps
+psscale -C$cpt_eq -D3.5i/-0.5i/4i/0.2h -Ba50g50:"Depth (km)": -O  -K >> $fig.ps
 pwd | psxy -R -J -O -H >> $fig.ps
 
-#psconvert $fig.ps -A -E1000 -P -Tg
-ps2pdf -A $fig.ps
-evince $fig.pdf 
+psconvert $fig.ps -A0.2c -P -Tf
+#ps2pdf -A $fig.ps
+#evince $fig.pdf 
