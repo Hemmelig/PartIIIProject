@@ -23,7 +23,7 @@ dist = float(sys.argv[2])
 plotphase = ["S", "ScS"]
 
 # Depth of earthquake in km
-depth_earthquake = 606.8
+depth_earthquake = 419.3
 
 # Defines array of distances to compute ray path at
 # format: np.arange(start, stop, stepsize)
@@ -33,10 +33,10 @@ print(dist_raypaths)
 # Defines array of distances to compute traveltime at
 distance = dist
 
-height = 35
+height = 45
 maxdv = -0.25
 mindv = -0.14
-heightStep = 2
+heightStep = 1
 dvStep = 0.01
 
 # Anomalous layer
