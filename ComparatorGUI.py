@@ -220,6 +220,10 @@ class Application(tk.Frame):
         # Clear current plot
         ax2.clear()
 
+        synTc = self.seisT.copy()
+        print(synTc.times())
+        synTc.stats['channel'] = 'syncsemcomp'
+
         # Get current data
         seis = read(self.seislist[int(self.s)], format='PICKLE')
         sta = seis[0].stats.station
@@ -238,23 +242,39 @@ class Application(tk.Frame):
         station_name = self.dir + 'Synthetics/UT_%s_%s' % (nw, sta)
 
         phase = "S"
-        self.times = []
-        self.seistoplot = []
+        times = []
+        seistoplot = []
         
         crs = open(station_name, "r")
         for columns in (row.strip().split() for row in crs):
-            self.times.append(float(columns[0]) - 450)
-            self.seistoplot.append(float(columns[1]))     
+            times.append(float(columns[0]) - 450)
+            seistoplot.append(float(columns[1]))
 
-        norm = np.max(np.absolute(self.seistoplot))
-        self.seistoplot = [x / norm for x in self.seistoplot]
+        norm = np.max(np.absolute(seistoplot))
+
+        
+        synTc.time = np.array([x + tshift - seis[0].stats.traveltimes['S'] for x in times])
+        synTc.data = np.array([x / norm for x in seistoplot])
+        synTc.stats.npts = len(synTc.data)
+        synTc.stats.delta = synTc.time[1] - synTc.time[0]
+        synTc.stats.sampling_rate = 1. / synTc.stats.delta
+        print(synTc.time)
+
+        # Filter
+        synTc.filter('highpass', freq=self.fmin, corners=2, zerophase=True)
+        synTc.filter('lowpass', freq=self.fmax, corners=2, zerophase=True)
+
+        norm = np.max(abs(synTc.data))
+        print(norm)
+        print(synTc.data / norm)
+        #synTc.data = [x / norm for x in self.seistoplot]
         #self.times = [x + self.tshift for x in self.times]
         #self.times = [x + seis[0].stats.traveltimes[phase] for x in self.times]
             
-        ax2.plot(self.times, self.seistoplot, 'k', linewidth=2) 
+        ax2.plot(synTc.time, synTc.data, 'k', linewidth=2) 
 
         ax2.set_ylim([-1.0, 1.0])
-        ax2.set_xlim([seis[0].stats.traveltimes[phase] - 50, seis[0].stats.traveltimes[phase] + 100])        
+        ax2.set_xlim([-50, 100])
 
         canvas2.draw()
 

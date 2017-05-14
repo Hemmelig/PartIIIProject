@@ -19,8 +19,8 @@ dir = 'Data/PeakData/' + name
 cm = plt.get_cmap('gist_rainbow')
 
 fig = plt.figure(figsize=(9,8))
-fig.text(0.47, 0.04, '% Shear velocity reduction', ha='center', fontsize=20)
-fig.text(0.06, 0.5, 'Height of ULVZ', va='center', rotation='vertical', fontsize=20)
+fig.text(0.47, 0.03, '% Shear velocity reduction', ha='center', fontsize=26)
+fig.text(0.07, 0.5, 'Height of ULVZ (km)', va='center', rotation='vertical', fontsize=26)
 
 for i in range(len(distances)):
     with open(dir + '_' + str(int(distances[i])) + '_2d_dt.csv', 'r') as csvfile:
@@ -32,7 +32,7 @@ for i in range(len(distances)):
     ax.set_title(str(distances[i]) + r'$^{\circ}$', fontsize=18, x=0.1, weight='bold')
     cax = ax.imshow(dt_arr, interpolation='nearest', extent=extent, aspect='auto', vmin=1, vmax=10)
 
-    ax.tick_params(labelsize=14)
+    ax.tick_params(labelsize=16)
     
     if (i <= 11):
         ax.set_xticklabels([])
@@ -47,7 +47,8 @@ for i in range(len(distances)):
 fig.subplots_adjust(right=0.8)
 cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
 cb = fig.colorbar(cax, cax=cbar_ax)
-cb.set_label('Sc$^{\prime}$S delay time (s)', y=0.5, fontsize=20)
+cb.set_label('Sc$^{\prime}$S delay time (s)', y=0.5, fontsize=26)
+cb.ax.tick_params(labelsize=18)
 
 plt.show()
         
