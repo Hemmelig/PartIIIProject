@@ -56,6 +56,7 @@ if plot_background:
     maxval = np.max(np.max(layer)) + .1
     m.pcolor(x, y, layer, cmap=LMC.rgb_map_light, linewidth=0, rasterized=True)
 
+
 m.drawcoastlines()
 
 for i in range(len(events)):

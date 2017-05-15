@@ -47,7 +47,7 @@ for i in range(len(events)):
     ax.set_title(titles[i], fontsize=24, x=0.05, weight='bold')
 
     # Draw basemap
-    m = Basemap(llcrnrlon=-176, llcrnrlat=8, urcrnrlon=-156, urcrnrlat=28, resolution='f')
+    m = Basemap(llcrnrlon=-176, llcrnrlat=10, urcrnrlon=-157, urcrnrlat=26, resolution='f')
     m.drawmapboundary(fill_color='#7777ff')
     m.fillcontinents(color='#ddaa66', lake_color='#7777ff', zorder=0)
     m.drawcoastlines()
@@ -88,7 +88,7 @@ for i in range(len(events)):
             tlats.append(tlat)
             dtdt.append(delayTime - dtPred - pCorrection)
 
-    plot = m.scatter(xs, ys, s=45, c=dtdt, vmin=1, vmax=8, marker='o', alpha=1, cmap=cm, zorder=2)
+    plot = m.scatter(xs, ys, s=50, c=dtdt, vmin=1, vmax=8, marker='o', alpha=1, cmap=cm, zorder=2)
     m.scatter(xs2, ys2, s=25, c='gray', marker='^', alpha=1, zorder=1)
     # draw parallels.
     parallels = np.arange(0.,90,10.)

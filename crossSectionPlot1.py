@@ -37,7 +37,7 @@ gs = gridspec.GridSpec(1, 3)
 ax = fig.add_subplot(gs[0], )
 
 # Draw basemap
-m = Basemap(llcrnrlon=-176, llcrnrlat=8, urcrnrlon=-156, urcrnrlat=28, resolution='c')
+m = Basemap(llcrnrlon=-176, llcrnrlat=10, urcrnrlon=-157, urcrnrlat=26, resolution='f')
 m.drawmapboundary(fill_color='#7777ff')
 m.fillcontinents(color='#ddaa66', lake_color='#7777ff', zorder=0)
 m.drawcoastlines()
@@ -60,10 +60,10 @@ draw_screen_poly(lats2, lons2, m)
 
 # draw parallels.
 parallels = np.arange(0.,90,10.)
-m.drawparallels(parallels,labels=[1,0,0,0],fontsize=14)
+m.drawparallels(parallels,labels=[1,0,0,0],fontsize=16)
 # draw meridians
 meridians = np.arange(180.,360.,10.)
-m.drawmeridians(meridians,labels=[0,0,0,1],fontsize=14)
+m.drawmeridians(meridians,labels=[0,0,0,1],fontsize=16)
 
 tlons = []
 tlats = []
@@ -117,7 +117,7 @@ for i in range(len(names)):
             tlats.append(tlat)
             dtdt.append(delayTime - dtPred - pCorrection)
             
-    plot = m.scatter(xs, ys, s=45, c=dtdt, vmin=1, vmax=8, marker='o', alpha=1, cmap=cm, zorder=2)
+    plot = m.scatter(xs, ys, s=50, c=dtdt, vmin=1, vmax=8, marker='o', alpha=1, cmap=cm, zorder=2)
     m.scatter(xs2, ys2, s=25, c='gray', marker='^', alpha=1, zorder=1)
 
 # Section for producing heights plots
@@ -261,9 +261,9 @@ for t in range(len(dvs)):
 
 # Configure axes
 
-ax.set_title('a', fontsize=24, x=0.05, weight='bold')
-ax1.set_title('b', fontsize=24, x=0.05, weight='bold')
-ax2.set_title('c', fontsize=24, x=0.05, weight='bold')
+ax.set_title('a', fontsize=26, x=0.05, weight='bold')
+ax1.set_title('b', fontsize=26, x=0.05, weight='bold')
+ax2.set_title('c', fontsize=26, x=0.05, weight='bold')
 
 ax1.set_ylabel('Height above CMB (km)', fontsize=18)
 ax2.set_ylabel('Height above CMB (km)', fontsize=18)

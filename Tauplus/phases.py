@@ -138,7 +138,7 @@ def plot(arrivals, plot_type="spherical", plot_all=True, legend=True,
         if not arrivalstmp:
             raise ValueError("Can only plot arrivals with calculated ray "
                              "paths.")
-        discons = arrivals.model.s_mod.v_mod.getDisconDepths()
+        discons = arrivals.model.s_mod.v_mod.get_discontinuity_depths()
         if plot_type == "spherical":
             if not ax:
                 plt.figure(figsize=(10, 10))
