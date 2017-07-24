@@ -48,8 +48,9 @@ dists = []
 comments = []
 xs = []
 ys = []
+xs2 = []
+ys2 = []
 dtdt = []
-
 tlons = []
 tlats = []
 
@@ -61,6 +62,15 @@ for x in lines:
     dists.append(float(x.split(':')[3]))
     comments.append(x.split(':')[4])
 f.close()
+
+# Read in data from textfile
+f1 = open(dir + 'convHeights_20.txt', 'r')
+lines = f1.readlines()
+heights = []
+
+for x in lines:
+    heights.append(float(x.split(':')[0]))
+f1.close()
 
 fig = plt.figure()
 ax = fig.add_subplot(2,2,1)
@@ -126,7 +136,7 @@ lons2 = [-173, -173, -164, -164]
 draw_screen_poly(lats1, lons1, m)
 draw_screen_poly(lats2, lons2, m)
         
-plot = m.scatter(xs, ys, s=25, c=dtdt, vmin=1, vmax=8, marker='o', alpha=1, cmap=cm)
+plot = m.scatter(xs, ys, s=25, c=dtdt, vmin=1, vmax=8, marker='o', alpha=1, cmap=cm, zorder=2)
 
 # draw parallels.
 parallels = np.arange(0.,90,10.)
@@ -137,41 +147,76 @@ m.drawmeridians(meridians,labels=[0,0,0,1],fontsize=10)
 
 ax1 = fig.add_subplot(2,2,2)
 Lon_tlons = [np.round(x) for x in tlons]
-Lon_dtdt = []
-Lon_dtdt_std = []
+Lon_height = []
+Lon_height_std = []
 lonBin = [-173, -172, -171, -170, -169, -168, -167, -166, -165, -164]
 for i in range(len(lonBin)):
-    tmp_dtdt = []
+    tmp_height = []
     for s in range(len(Lon_tlons)):
         if (Lon_tlons[s] == lonBin[i] and tlats[s] >= 17.5 and tlats[s] <= 21.5):
-            tmp_dtdt.append(dtdt[s])
-    Lon_dtdt.append(np.mean(tmp_dtdt))
-    Lon_dtdt_std.append(np.std(tmp_dtdt))
-    del tmp_dtdt
+            if (heights[s] == 0):
+                pass
+            else:
+                tmp_height.append(heights[s])
+    if not tmp_height:
+        Lon_height.append(0)
+        Lon_height_std.append(0)
+    else:
+        Lon_height.append(np.mean(tmp_height))
+        Lon_height_std.append(np.std(tmp_height))
+    del tmp_height
 
-ax1.errorbar(lonBin, Lon_dtdt, yerr=Lon_dtdt_std)
+print(Lon_height, Lon_height_std, lonBin)
+indices = [i for i, x in enumerate(Lon_height) if x == 0]
+for i in range(len(indices)):
+    j = indices[i]
+    del Lon_height[j]
+    del Lon_height_std[j]
+    del lonBin[j]
+    indices = [x - 1 for x in indices]
+    
+print(Lon_height, Lon_height_std, lonBin)
+
+ax1.errorbar(lonBin, Lon_height, yerr=Lon_height_std)
 
 ax2 = fig.add_subplot(2,2,3)
 Lat_tlons = [np.round(x) for x in tlats]
-Lat_dtdt = []
-Lat_dtdt_std = []
+Lat_height = []
+Lat_height_std = []
 latBin = [15, 16, 17, 18, 19, 20, 21, 22, 23]
 for i in range(len(latBin)):
-    tmp_dtdt = []
+    tmp_height = []
     for s in range(len(Lat_tlons)):
         if (Lat_tlons[s] == latBin[i] and tlons[s] >= -170 and tlons[s] <= -166):
-            tmp_dtdt.append(dtdt[s])
-    Lat_dtdt.append(np.mean(tmp_dtdt))
-    Lat_dtdt_std.append(np.std(tmp_dtdt))
-    del tmp_dtdt
+            if (heights[s] == 0):
+                pass
+            else:
+                tmp_height.append(heights[s])
+    if not tmp_height:
+        Lat_height.append(0)
+        Lat_height_std.append(0)
+    else:
+        Lat_height.append(np.mean(tmp_height))
+        Lat_height_std.append(np.std(tmp_height))
+    del tmp_height
 
-ax2.errorbar(latBin, Lat_dtdt, yerr=Lat_dtdt_std)
+print(Lat_height, latBin)
+indices = [i for i, x in enumerate(Lat_height) if x == 0]
+for i in range(len(indices)):
+    j = indices[i]
+    del Lat_height[j]
+    del Lat_height_std[j]
+    del latBin[j]
+    indices = [x - 1 for x in indices]
+print(Lat_height, latBin)
+    
+ax2.errorbar(latBin, Lat_height, yerr=Lat_height_std)
 
 # Colorbar axes
 #cbaxes = fig.add_axes([0.8, 0.1, 0.03, 0.8])
 #plt.colorbar(plot, cax=cbaxes)
 
-#plt.savefig('Plots/' + name + '/' + 'heightMap.png', bbox_inches='tight')
-#plt.savefig('Plots/' + name + '/' + 'heightMap.pdf', bbox_inches='tight')
+#plt.savefig('Plots/heightMap.png', bbox_inches='tight')
+#plt.savefig('Plots/heightMap.pdf', bbox_inches='tight')
             
 plt.show()
