@@ -1,5 +1,19 @@
 #!/usr/bin/env python3
 
+'''
+This script can be used to select data.
+It will loop through the seismograms and show the Radial component (red) and Transverse component (black).
+Press the buttons in  the GUI to process the data:
+1. Keep data (also bound to left arrow key)
+2. Discard data (also bound to right arrow key)
+3. Invert polarity (also bound to the up arrow key)
+Discarded data will be moved to a directory called Dump. It might be wise to implement a method of retrieval that can be incorporated into the GUI.
+'''
+
+#------------------------------------------------------------------------------------------#
+### Import section ------------------------------------------------------------------------#
+#------------------------------------------------------------------------------------------#
+
 import obspy
 from obspy import read, UTCDateTime
 from obspy.core import Stream
@@ -20,16 +34,8 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import *
 
-
-'''
-This script can be used to select data.
-It will loop through the seismograms and show the Radial component (red) and Transverse component (black).
-Press the buttons in  the GUI to process the data:
-1. Keep data (also bound to left arrow key)
-2. Discard data (also bound to right arrow key)
-3. Invert polarity (also bound to the up arrow key)
-Discarded data will be moved to a directory called Dump. It might be wise to implement a method of retrieval that can be incorporated into the GUI.
-'''
+#------------------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------------------#
 
 class Application(tk.Frame):
     ABOUT_TEXT = """Instructions for use:
@@ -284,8 +290,15 @@ class Application(tk.Frame):
         label1.pack(anchor=W)
         label2 = Label(toplevel, text=self.DISCLAIMER, height=0, width=100)
         label2.pack()        
-        
+
+#------------------------------------------------------------------------------------------#
+### Initialise class ----------------------------------------------------------------------#
+#------------------------------------------------------------------------------------------#
+
 root = tk.Tk()
 root.title("Part III Project - Data and Synthetics Comparator")
 app = Application(master=root)
 app.mainloop()
+
+#------------------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------------------#

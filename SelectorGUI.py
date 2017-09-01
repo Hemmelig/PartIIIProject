@@ -1,5 +1,19 @@
 #!/usr/bin/env python3
 
+'''
+This script can be used to select data.
+It will loop through the seismograms and show the Radial component and Transverse component.
+Press the buttons in  the GUI to process the data:
+1. Keep data (also bound to left arrow key)
+2. Discard data (also bound to right arrow key)
+3. Invert polarity (also bound to the up arrow key)
+Discarded data will be moved to a directory called Dump.
+'''
+
+#------------------------------------------------------------------------------------------#
+### Import section ------------------------------------------------------------------------#
+#------------------------------------------------------------------------------------------#
+
 import obspy
 from obspy import read, UTCDateTime
 from obspy.core import Stream
@@ -20,16 +34,8 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import *
 
-
-'''
-This script can be used to select data.
-It will loop through the seismograms and show the Radial component (red) and Transverse component (black).
-Press the buttons in  the GUI to process the data:
-1. Keep data (also bound to left arrow key)
-2. Discard data (also bound to right arrow key)
-3. Invert polarity (also bound to the up arrow key)
-Discarded data will be moved to a directory called Dump. It might be wise to implement a method of retrieval that can be incorporated into the GUI.
-'''
+#------------------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------------------#
 
 class Application(tk.Frame):
     ABOUT_TEXT = """Instructions for use:
@@ -37,9 +43,7 @@ class Application(tk.Frame):
     This software can be used to download and process data from the IRIS
     catalogue website. """
     
-    DISCLAIMER = """Author
-
-    This interface was developed by Me."""
+    DISCLAIMER = "Author: Conor Bacon"
     
     # Initialise counter
     s = 0
@@ -68,12 +72,14 @@ class Application(tk.Frame):
 
         self.createWidgets()
 
+        
     def createWidgets(self):
         # Create menu
         menubar = Menu(root)
         menubar.add_command(label="Instructions", command=lambda: self.instructions())
         menubar.add_command(label="Exit", command=root.quit)
-        root.config(menu=menubar)       
+        root.config(menu=menubar)
+
         # Create options section
         optionFrame = ttk.Frame(root, padding="12 12 12 12", relief=RAISED)
         optionFrame.grid(column=0, row=2, columnspan=2, rowspan=12, sticky=(N, W, E, S))
@@ -116,11 +122,11 @@ class Application(tk.Frame):
             child.pack_configure(padx=5, pady=5)        
 
         # Create transverse canvas
-        fig = plt.figure(figsize=(10,5), dpi=100)
-        ax = fig.add_axes([0.1,0.1,0.8,0.8])
-        canvas = FigureCanvasTkAgg(fig, master=root)
-        canvas.get_tk_widget().grid(row=2, column=2, rowspan=6, columnspan=8)
-        canvas.show()
+        fig1 = plt.figure(figsize=(10,5), dpi=100)
+        ax1 = fig.add_axes([0.1,0.1,0.8,0.8])
+        canvas1 = FigureCanvasTkAgg(fig1, master=root)
+        canvas1.get_tk_widget().grid(row=2, column=2, rowspan=6, columnspan=8)
+        canvas1.show()
 
         # Create radial canvas
         fig2 = plt.figure(figsize=(10,5), dpi=100)
@@ -131,19 +137,19 @@ class Application(tk.Frame):
 
         self.update()
         
-        root.bind("<Right>", lambda _: self.acceptData(canvas, ax, canvas2, ax2))
-        root.bind("<Left>", lambda _: self.rejectData(canvas, ax, canvas2, ax2))
-        root.bind("<Up>", lambda _: self.invertData(canvas, ax, canvas2, ax2))      
+        root.bind("<Right>", lambda _: self.acceptData(canvas1, ax1, canvas2, ax2))
+        root.bind("<Left>", lambda _: self.rejectData(canvas1, ax1, canvas2, ax2))
+        root.bind("<Up>", lambda _: self.invertData(canvas1, ax1, canvas2, ax2))      
 
         
-    def initiate(self, canvas, ax, canvas2, ax2):
-        dir = 'Data/' + str(self.name.get()) + '/'
+    def initiate(self, canvas1, ax1, canvas2, ax2):
+        dir = 'Data/' + str(self.name.get()) + '/RealData/'
         self.seislist = glob.glob(dir + '/*PICKLE')
         print(self.seislist)
 
         self.resetCounter()
 
-        self.updateFreqBand(canvas, ax, canvas2, ax2)
+        self.updateFreqBand(canvas1, ax1, canvas2, ax2)
         
         # Create directory to dump data into
         self.dirdump = dir + 'Dump'
@@ -152,7 +158,8 @@ class Application(tk.Frame):
 
         self.distAzUpdate()
 
-    def updateFreqBand(self, canvas, ax, canvas2, ax2):
+        
+    def updateFreqBand(self, canvas1, ax1, canvas2, ax2):
         freqBand = self.freqBand.get()
         if (freqBand == 1):
             self.fmin = 0.033
@@ -164,21 +171,25 @@ class Application(tk.Frame):
             self.fmin = 1 / self.freqMin.get()
             self.fmax = 1 / self.freqMax.get()
 
-        self.plot(canvas, ax, canvas2, ax2)
+        self.plot(canvas1, ax1, canvas2, ax2)
 
+        
     def counterUpdate(self):
         self.eventName.set(str(self.seislist[self.s]))
         self.event.set(str(self.s + 1) + ' / ' + str(len(self.seislist)))
+        
 
     def distAzUpdate(self):
         self.azimuth.set(str(round(self.az, 3)))
         self.distance.set(str(round(self.dist, 3)))
         
+        
     def resetCounter(self):
         self.s = 0
         self.counterUpdate()
+        
 
-    def rejectData(self, canvas, ax, canvas2, ax2, event=None):
+    def rejectData(self, canvas1, ax1, canvas2, ax2, event=None):
         shutil.move(self.seislist[self.s], self.dirdump)
         self.s += 1
 
@@ -186,20 +197,22 @@ class Application(tk.Frame):
             print('Last seismogram')
         else:
             self.counterUpdate()
-            self.updateFreqBand(canvas, ax, canvas2, ax2)
+            self.updateFreqBand(canvas1, ax1, canvas2, ax2)
             self.distAzUpdate()
 
-    def acceptData(self, canvas, ax, canvas2, ax2, event=None):
+            
+    def acceptData(self, canvas1, ax1, canvas2, ax2, event=None):
         self.s += 1
 
         if ((self.s) == len(self.seislist)):
             print('Last seismogram')
         else:
             self.counterUpdate()
-            self.updateFreqBand(canvas, ax, canvas2, ax2)
+            self.updateFreqBand(canvas1, ax1, canvas2, ax2)
             self.distAzUpdate()
+            
 
-    def invertData(self, canvas, ax, canvas2, ax2, event=None):
+    def invertData(self, canvas1, ax1, canvas2, ax2, event=None):
         self.seisR.data = self.seisR.data * -1.
         self.seisT.data = self.seisT.data * -1.
               
@@ -218,11 +231,12 @@ class Application(tk.Frame):
         filename = self.seislist[self.s]
         seisnew.write(filename, 'PICKLE')
         self.replot = True
-        self.updateFreqBand(canvas, ax, canvas2, ax2)
+        self.updateFreqBand(canvas1, ax1, canvas2, ax2)
 
-    def plot(self, canvas, ax, canvas2, ax2):
+        
+    def plot(self, canvas1, ax1, canvas2, ax2):
         # Clear current plot
-        ax.clear()
+        ax1.clear()
         ax2.clear()
 
         # Get current data
@@ -231,8 +245,6 @@ class Application(tk.Frame):
         if (self.replot == False):
             seis.filter('highpass', freq=self.fmin, corners=2, zerophase=True)
             seis.filter('lowpass', freq=self.fmax, corners=2, zerophase=True)
-
-        phase = 'S'
 
         tshift = seis[0].stats['starttime'] - seis[0].stats['eventtime']
 
@@ -250,27 +262,20 @@ class Application(tk.Frame):
             self.seisR.data = np.gradient(self.seisR.data, self.seisT.stats.delta)
 
         # Plotting data. Both components normalised by max amplitude on transverse component
-        ax.plot(self.seisT.times() + tshift, self.seisT.data / np.max(abs(self.seisT.data)), 'k', linewidth=2)
-        ax2.plot(self.seisR.times() + tshift, self.seisR.data / np.max(abs(self.seisT.data)), 'k', linewidth=2)
+        ax1.plot(self.seisT.times() + tshift - seis[0].stats.traveltimes['S'], self.seisT.data / np.max(abs(self.seisT.data)), 'k', linewidth=2)
+        ax2.plot(self.seisR.times() + tshift - seis[0].stats.traveltimes['S'], self.seisR.data / np.max(abs(self.seisT.data)), 'k', linewidth=2)
 
         # Retrieve synthetic data
-        self.synT = seis.select(channel='BXT')[0]
-        self.synR = seis.select(channel='BXR')[0]
-        self.synZ = seis.select(channel='BXZ')[0]
+        #self.synT = seis.select(channel='BXT')[0]
+        #self.synR = seis.select(channel='BXR')[0]
+        #self.synZ = seis.select(channel='BXZ')[0]
         
         # Plot synthetic data
-#        if (self.replot == False):
-#            self.synT.filter('highpass', freq=self.fmin, corners=2, zerophase=True)
-#            self.synT.filter('lowpass', freq=self.fmax, corners=2, zerophase=True)
-
-#            self.synR.filter('highpass', freq=self.fmin, corners=2, zerophase=True)
-#            self.synR.filter('lowpass', freq=self.fmax, corners=2, zerophase=True)
-
-        self.synR.data = np.gradient(self.synR.data, self.synR.stats.delta)
-        self.synT.data = np.gradient(self.synT.data, self.synT.stats.delta)
+        #self.synR.data = np.gradient(self.synR.data, self.synR.stats.delta)
+        #self.synT.data = np.gradient(self.synT.data, self.synT.stats.delta)
         
-        ax.plot(self.synT.times(), self.synT.data / np.max(self.seisT.data), color=[0.5,0.5,0.5])
-        ax2.plot(self.synR.times(), self.synR.data / np.max(self.seisT.data), color=[0.5,0.5,0.5])
+        #ax1.plot(self.synT.times(), self.synT.data / np.max(self.seisT.data), color=[0.5,0.5,0.5])
+        #ax2.plot(self.synR.times(), self.synR.data / np.max(self.seisT.data), color=[0.5,0.5,0.5])
 
         # Plotting travel time predictions
         for k in seis[0].stats.traveltimes.keys():
@@ -278,17 +283,16 @@ class Application(tk.Frame):
                 ax.plot(seis[0].stats.traveltimes[k], 0.0, 'g', marker='o', markersize=4)
                 ax.text(seis[0].stats.traveltimes[k], -0.2, k, fontsize=8)
 
-
-        ax.set_title('%s' % (str(self.eventName.get())), loc='left')
-        ax.set_title('%s' % (str(self.event.get())), loc='right')
+        ax1.set_title('%s' % (str(self.eventName.get())), loc='left')
+        ax1.set_title('%s' % (str(self.event.get())), loc='right')
                 
-        ax.set_ylim([-1.0, 1.0])
-        ax.set_xlim([seis[0].stats.traveltimes[phase] - 50, seis[0].stats.traveltimes[phase] + 100])
+        ax1.set_ylim([-1.0, 1.0])
+        ax1.set_xlim([-50, 100])
 
         ax2.set_ylim([-1.0, 1.0])
-        ax2.set_xlim([seis[0].stats.traveltimes[phase] - 50, seis[0].stats.traveltimes[phase] + 100])
+        ax2.set_xlim([-50, 100])
         
-        canvas.draw()
+        canvas1.draw()
         canvas2.draw()
 
         self.replot = False
