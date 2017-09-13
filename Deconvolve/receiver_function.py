@@ -429,8 +429,8 @@ After Chuck Ammons code 1998- Jenny Andrews 2006
     phaseshift = [cmath.exp(1j*(frq[x]*2.*np.pi*-(timeshift))) for x in range(len(frq))] 
 
     #Filter components
-    comp2f=np.real(np.fft.ifft(filterf*np.fft.fft(comp2)))
-    comp1f=np.real(np.fft.ifft(filterf*np.fft.fft(comp1)))
+    comp2f=np.real(np.fft.ifft(filterf*np.fft.fft(comp2, NFFT)))
+    comp1f=np.real(np.fft.ifft(filterf*np.fft.fft(comp1, NFFT)))
  
 
     # computer power in numerator

@@ -57,7 +57,7 @@ class Application(tk.Frame):
 
         self.dataType.set(1)
         self.freqBand.set(1)
-        self.deconType.set(1)
+        self.deconType.set(2)
 
         self.value = IntVar()
         self.clickCounter = IntVar()
@@ -125,8 +125,8 @@ class Application(tk.Frame):
         ttk.Label(nameFrame2, text="Deconvolution options").pack(anchor=W)        
 
         # Data type radiobuttons
-        Radiobutton(master=nameFrame2, text="Water level", variable=self.deconType, value=1).pack(anchor=W)
         Radiobutton(master=nameFrame2, text="Iterative", variable=self.deconType, value=2).pack(anchor=W)
+        Radiobutton(master=nameFrame2, text="Water level", variable=self.deconType, value=1).pack(anchor=W)
 
         ttk.Label(master=nameFrame2, text="Water level").pack(anchor=W)
         ttk.Entry(master=nameFrame2, textvariable=self.waterLevel).pack(anchor=W)
@@ -181,7 +181,9 @@ class Application(tk.Frame):
         if (dataType == 2):
             self.dir = dir + '/CSEM/'
         if (dataType == 3):
-            self.dir = dir + '/AxiSEM/'
+            # Need to move AxiSEM data into directory and create folder
+            pass
+            #self.dir = dir + '/AxiSEM/'
 
         dirLength = len(self.dir)
 

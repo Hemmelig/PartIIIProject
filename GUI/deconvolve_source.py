@@ -14,13 +14,13 @@ from obspy.io.xseed import Parser
 from obspy.clients.arclink import Client as ARCLINKClient
 from obspy.clients.fdsn import Client as IRISClient
 from subprocess import call
-import receiver_function as rf
+import iterativeDecon as itd
 
 #####################################################################################
 
 def deconvolve_data(dataType, name, sourceName, idx1, idx2, deconType):
 
-    fmax = .5
+    fmax = .1
     fmin = 0.05
     savedist = []
     
@@ -33,15 +33,16 @@ def deconvolve_data(dataType, name, sourceName, idx1, idx2, deconType):
         dir = dir + 'AxiSEM/'
 
     sourceseis = read(dir + sourceName + '.PICKLE', format='PICKLE')
-    Ptime = sourceseis[0].stats.traveltimes['S']
-    SHref = sourceseis.select(channel='BHT')[0]
-    SHref.filter('bandpass', freqmin=fmin, freqmax=fmax, corners=2, zerophase=True)
-    SHref.data = np.gradient(SHref.data, SHref.stats.delta)
+    Stime = sourceseis[0].stats.traveltimes['S']
+    source = sourceseis.select(channel='BHT')[0]
+    source.filter('bandpass', freqmin=fmin, freqmax=fmax, corners=2, zerophase=True)
+    source.data = np.gradient(source.data, source.stats.delta)
 
     tshift = sourceseis[0].stats['starttime'] - sourceseis[0].stats['eventtime']
-    SHref.times = SHref.times() + tshift - sourceseis[0].stats.traveltimes['S']
-
-    source = SHref.slice(SHref.times[idx1], SHref.times[idx2])
+    source.time = source.times()
+    source.time = source.time[idx1:idx2]
+    source.data = source.data[idx1:idx2]    
+    
     norm = 0.3 * np.max([np.max(source.data), np.max(source.data)])
     source.taper(max_percentage=0.05, type='cosine')
 
@@ -50,16 +51,16 @@ def deconvolve_data(dataType, name, sourceName, idx1, idx2, deconType):
     plt.figure(figsize=(14,10))
 
     plt.subplot(1,3,1)
-    plt.plot(SHref.times, SHref.data, norm, 'k')
+    plt.plot(source.time, source.data, norm, 'k')
 
-    plt.xlim([Ptime - tshift - 10, Ptime - tshift + 10])
+    plt.xlim([-25., 150])
     plt.ylim([-(1 / 0.3), (1 / 0.3)])
     plt.title('Source waveform')
     plt.xlabel('Time around S arrival (s)')
     
     dirLength = len(dir)    
     
-    savedir = dir + '/Deconvolved/'
+    savedir = dir + 'Deconvolved/'
 
 
     for i in range(len(seislist)):
@@ -70,7 +71,7 @@ def deconvolve_data(dataType, name, sourceName, idx1, idx2, deconType):
         station = station[:len(station) - 7]
         
         seis = read(seislist[i], format='PICKLE')
-        Ptime = seis[0].stats.traveltimes['S']
+        Stime = seis[0].stats.traveltimes['S']
         SHref = seis.select(channel='BHT')[0]
         dist = seis[0].stats['dist']
 
@@ -80,13 +81,14 @@ def deconvolve_data(dataType, name, sourceName, idx1, idx2, deconType):
         norm = 0.3 * np.max(abs(SHref.data))
 
         # Filter seismograms
-        SHref = SHref.slice(seis[0].stats['eventtime'] + Ptime - 25., seis[0].stats['eventtime'] + Ptime + 150)
+        SHref = SHref.slice(seis[0].stats['eventtime'] + Stime - 25., seis[0].stats['eventtime'] + Stime + 150)
         RF = trace.Trace()
         
         if (deconType == 1):
-            RF.data, fit = rf.water_level_decon(SHref.data, source.data, 3.e-2, source.stats['delta'], 'cosine', .5, 25.)
+            #RF.data, fit = itd.water_level_decon(SHref.data, source.data, 3.e-2, source.stats['delta'], 'cosine', .5, 25.)
+            pass
         if (deconType == 2):
-            RF.data, fit = rf.iterative_deconvolution(SHref.data, source.data, 200, source.stats['delta'], 'cosine', .5, 25.)
+            RF.data, fit = itd.iterative_deconvolution(SHref.data, source.data, 200, source.stats['delta'], 'cosine', .5, 25.)
         
         RF.data = 3. * RF.data / np.max(RF.data)
         RF.times = SHref.times()
@@ -105,7 +107,7 @@ def deconvolve_data(dataType, name, sourceName, idx1, idx2, deconType):
 
         # Save deconvolved waveforms so they can be accessed again.
         saveName = savedir + station
-        RF.write(saveName, format='PICKLE')
+        RF.write(saveName + '.PICKLE', format='PICKLE')
                 
 
 
@@ -123,5 +125,6 @@ def deconvolve_data(dataType, name, sourceName, idx1, idx2, deconType):
 
     plt.title('Waveforms ' + savedir)
 
-    plt.savefig('deconvolvedSV_' + savedir + '.pdf')
+    plt.savefig('Plots/' + str(name) + '/' + sourceName + '_deconvolved.png', bbox_inches='tight')
+    plt.savefig('Plots/' + str(name) + '/' + sourceName + '_deconvolved.pdf', bbox_inches='tight')
     plt.show()

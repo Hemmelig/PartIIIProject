@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
 
-### The purpose of this code is to provide a simple GUI allowing the user to perform
-### a range of different actions on a given dataset
-### To use:
-### 1. Fill in the details of the event and stations of interest
-### 2. Download the data then process it
-### 3. Add the CMT source data - open base file, edit then save in relevant Data folder
-### 4. Add synthetics and traveltimes
-### 5. Plot data. !!! Need to add distance and azimuth functionality of plots !!!
+'''
+ The purpose of this code is to provide a simple GUI allowing the user to perform
+ a range of different actions on a given dataset
+ To use:
+ 1. Fill in the details of the event and stations of interest
+ 2. Download the data then process it
+ 3. Add the CMT source data - open base file, edit then save in relevant Data folder
+ 4. Add synthetics and traveltimes
+ 5. Plot data. !!! Need to add distance and azimuth functionality of plots !!!
+'''
 
-#####################################################################################
-### Import modules and external python scripts
-#####################################################################################
+#-----------------------------------------------------------------------------------#
+### Import modules and external python scripts -------------------------------------#
+#-----------------------------------------------------------------------------------#
 
 import sys, os, subprocess
 from tkinter import *
@@ -29,7 +31,7 @@ from plot_data_with_distance import *
 from add_turn_points import *
 from make_stationlist import *
 
-#####################################################################################
+#-----------------------------------------------------------------------------------#
     
 class Application(tk.Frame):
     ABOUT_TEXT = """This software can be used to download and process data from the IRIS
@@ -54,9 +56,7 @@ class Application(tk.Frame):
     4. 
      """
     
-    DISCLAIMER = """Author
-
-    This interface was developed by Me."""
+    DISCLAIMER = "Author: Conor Bacon"
 
     def __init__(self, master=None):
         tk.Frame.__init__(self, master)
